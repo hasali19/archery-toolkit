@@ -13,6 +13,13 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 }
 
 class Sessions extends Table {
@@ -22,7 +29,8 @@ class Sessions extends Table {
 }
 
 class ArrowScores extends Table {
-  IntColumn get sessionId => integer().references(Sessions, #id)();
+  IntColumn get sessionId =>
+      integer().references(Sessions, #id, onDelete: KeyAction.cascade)();
   IntColumn get index => integer()();
   IntColumn get scoreId => integer()();
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();

@@ -123,7 +123,20 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Free Practice')),
+      appBar: AppBar(
+        title: Text('Free Practice'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await (db.delete(
+                db.sessions,
+              )..where((s) => s.id.equals(widget.sessionId))).go();
+            },
+            icon: Icon(Icons.delete),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(

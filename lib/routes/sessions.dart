@@ -82,6 +82,31 @@ class _SessionsPageState extends State<SessionsPage> {
                         ),
                       );
                     },
+                    onLongPress: () {
+                      showModalBottomSheet(
+                        context: context,
+                        clipBehavior: Clip.antiAlias,
+                        builder: (context) {
+                          return ListView(
+                            shrinkWrap: true,
+                            children: [
+                              ListTile(
+                                leading: Icon(Icons.delete),
+                                title: Text('Delete'),
+                                textColor: Colors.red,
+                                iconColor: Colors.red,
+                                onTap: () async {
+                                  Navigator.pop(context);
+                                  await (db.delete(db.sessions)
+                                        ..where((s) => s.id.equals(session.id)))
+                                      .go();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
                   ),
               ],
             );
