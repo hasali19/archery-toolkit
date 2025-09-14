@@ -26,6 +26,8 @@ class Sessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get startTime => dateTime().withDefault(currentDateAndTime)();
   IntColumn get arrowsPerEnd => integer()();
+  IntColumn get distance => integer()();
+  TextColumn get distanceUnit => text()();
 }
 
 class ArrowScores extends Table {

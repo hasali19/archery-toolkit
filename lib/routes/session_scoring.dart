@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' hide Column, JsonKey;
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
 part 'session_scoring.freezed.dart';
@@ -122,6 +123,9 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
 
   @override
   Widget build(BuildContext context) {
+    final total = scores.map((s) => s.value).sum;
+    final average = scores.isEmpty ? 0 : total / scores.length;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Free Practice'),
@@ -137,12 +141,22 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SafeArea(
-              top: false,
-              bottom: false,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Text('${session?.distance} ${session?.distanceUnit}'),
+                  Spacer(),
+                  Text('Total: $total'),
+                  Gap(8),
+                  Text('Average: ${average.toStringAsFixed(2)}'),
+                ],
+              ),
+            ),
+            Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _ScoreSheet(
@@ -151,19 +165,16 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: SafeArea(
-              top: false,
+            Padding(
+              padding: const EdgeInsets.all(8),
               child: ScoreKeyboard(
                 scores: possibleScores,
                 onScorePressed: _addScore,
                 onBackspacePressed: _removeLastScore,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

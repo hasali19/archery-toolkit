@@ -1,11 +1,15 @@
 import 'package:archery_toolkit/db/db.dart';
 import 'package:archery_toolkit/routes/session_scoring.dart';
 import 'package:collection/collection.dart';
-import 'package:drift/drift.dart' hide Column;
+import 'package:drift/drift.dart' hide Column, JsonKey;
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:stream_transform/stream_transform.dart';
+
+part 'sessions.freezed.dart';
 
 final DateFormat _dateFormat = DateFormat('dd MMM y');
 
@@ -67,7 +71,9 @@ class _SessionsPageState extends State<SessionsPage> {
               children: [
                 for (final (:session, :total) in snapshot.data!)
                   ListTile(
-                    title: Text('Free Practice'),
+                    title: Text(
+                      'Free Practice • ${session.distance} ${session.distanceUnit}',
+                    ),
                     subtitle: Text(_dateFormat.format(session.startTime)),
                     trailing: Text(
                       total.toString(),
@@ -119,18 +125,22 @@ class _SessionsPageState extends State<SessionsPage> {
         tooltip: 'New Session',
         child: const Icon(Icons.add),
         onPressed: () async {
-          final int? arrowsPerEnd = await showDialog(
+          final _NewSessionModel? model = await showDialog(
             context: context,
             builder: (context) {
               return _NewSessionDialog();
             },
           );
 
-          if (arrowsPerEnd != null) {
+          if (model != null) {
             final session = await db
                 .into(db.sessions)
                 .insertReturning(
-                  SessionsCompanion.insert(arrowsPerEnd: arrowsPerEnd),
+                  SessionsCompanion.insert(
+                    arrowsPerEnd: model.arrowsPerEnd,
+                    distance: model.distance,
+                    distanceUnit: model.distanceUnit,
+                  ),
                 );
 
             if (context.mounted) {
@@ -149,7 +159,16 @@ class _SessionsPageState extends State<SessionsPage> {
   }
 }
 
-class _NewSessionDialog extends StatefulWidget {
+@freezed
+abstract class _NewSessionModel with _$NewSessionModel {
+  factory _NewSessionModel({
+    required int arrowsPerEnd,
+    required int distance,
+    required String distanceUnit,
+  }) = __NewSessionModel;
+}
+
+class _NewSessionDialog extends StatefulHookWidget {
   const _NewSessionDialog();
 
   @override
@@ -157,7 +176,10 @@ class _NewSessionDialog extends StatefulWidget {
 }
 
 class _NewSessionDialogState extends State<_NewSessionDialog> {
+  final _formKey = GlobalKey<FormState>();
+
   int arrowsPerEnd = 3;
+  String distanceUnit = 'yards';
 
   @override
   Widget build(BuildContext context) {
@@ -166,22 +188,52 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
       color: theme.colorScheme.onSurface.withAlpha(180),
     );
 
+    final distanceController = useTextEditingController(text: '20');
+
     return AlertDialog(
       title: Text('New Session'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Arrows per end', style: labelStyle),
-          RadioGroup(
-            groupValue: 3,
-            onChanged: (value) {},
-            child: Row(
-              spacing: 8,
-              children: [_buildChoice(3), _buildChoice(6)],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
+          children: [
+            TextFormField(
+              controller: distanceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                // hintText: 'Distance',
+                labelText: 'Distance',
+              ),
+              validator: (value) {
+                if (value == null ||
+                    value.isEmpty ||
+                    int.tryParse(value) == null) {
+                  return 'Enter a valid number';
+                }
+                return null;
+              },
             ),
-          ),
-        ],
+            Row(
+              spacing: 8,
+              children: [
+                _buildUnitsChoice('metres'),
+                _buildUnitsChoice('yards'),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Arrows per end', style: labelStyle),
+                Row(
+                  spacing: 8,
+                  children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -189,14 +241,40 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
           child: Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(arrowsPerEnd),
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) {
+              return;
+            }
+
+            final distance = int.parse(distanceController.text);
+
+            Navigator.of(context).pop(
+              _NewSessionModel(
+                arrowsPerEnd: arrowsPerEnd,
+                distance: distance,
+                distanceUnit: distanceUnit,
+              ),
+            );
+          },
           child: Text('Ok'),
         ),
       ],
     );
   }
 
-  Widget _buildChoice(int value) {
+  Widget _buildUnitsChoice(String value) {
+    return ChoiceChip(
+      label: Text(value),
+      selected: distanceUnit == value,
+      onSelected: (selected) {
+        setState(() {
+          distanceUnit = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildArrowsChoice(int value) {
     return ChoiceChip(
       label: Text(value.toString()),
       selected: arrowsPerEnd == value,
