@@ -51,6 +51,8 @@ jobs:
     concurrency:
       group: flutter-release
       cancel-in-progress: true
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
