@@ -1,4 +1,4 @@
-package com.example.archery_toolkit
+package dev.hasali.archery_toolkit
 
 import io.flutter.embedding.android.FlutterActivity
 
