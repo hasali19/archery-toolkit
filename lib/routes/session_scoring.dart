@@ -1,30 +1,40 @@
+import 'dart:async';
+
+import 'package:archery_toolkit/db/db.dart';
 import 'package:archery_toolkit/widgets/score_keyboard.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart' hide Column, JsonKey;
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:provider/provider.dart';
 
 part 'session_scoring.freezed.dart';
 
 final possibleScores = [
-  Score(label: 'X', value: 10, color: Colors.yellow),
-  Score(label: '10', value: 10, color: Colors.yellow),
-  Score(label: '9', value: 9, color: Colors.yellow),
-  Score(label: '8', value: 8, color: Colors.red),
-  Score(label: '7', value: 7, color: Colors.red),
-  Score(label: '6', value: 6, color: Colors.blue),
-  Score(label: '5', value: 5, color: Colors.blue),
-  Score(label: '4', value: 4, color: Colors.black),
-  Score(label: '3', value: 3, color: Colors.black),
-  Score(label: '2', value: 2, color: Colors.white),
-  Score(label: '1', value: 1, color: Colors.white),
-  Score(label: 'M', value: 0, color: Colors.green),
+  Score(id: 1, label: 'X', value: 10, color: Colors.yellow),
+  Score(id: 2, label: '10', value: 10, color: Colors.yellow),
+  Score(id: 3, label: '9', value: 9, color: Colors.yellow),
+  Score(id: 4, label: '8', value: 8, color: Colors.red),
+  Score(id: 5, label: '7', value: 7, color: Colors.red),
+  Score(id: 6, label: '6', value: 6, color: Colors.blue),
+  Score(id: 7, label: '5', value: 5, color: Colors.blue),
+  Score(id: 8, label: '4', value: 4, color: Colors.black),
+  Score(id: 9, label: '3', value: 3, color: Colors.black),
+  Score(id: 10, label: '2', value: 2, color: Colors.white),
+  Score(id: 11, label: '1', value: 1, color: Colors.white),
+  Score(id: 12, label: 'M', value: 0, color: Colors.green),
 ];
+
+final possibleScoresById = {
+  for (final score in possibleScores) score.id: score,
+};
 
 @freezed
 abstract class Score with _$Score {
   const Score._();
 
   const factory Score({
+    required int id,
     required String label,
     required int value,
     required Color color,
@@ -35,14 +45,80 @@ abstract class Score with _$Score {
 }
 
 class SessionScoringPage extends StatefulWidget {
-  const SessionScoringPage({super.key});
+  const SessionScoringPage({super.key, required this.sessionId});
+
+  final int sessionId;
 
   @override
   State<SessionScoringPage> createState() => _SessionScoringPageState();
 }
 
 class _SessionScoringPageState extends State<SessionScoringPage> {
-  final scores = <Score>[];
+  late final AppDatabase db;
+
+  Session? session;
+  List<Score> scores = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    db = context.read();
+
+    scheduleMicrotask(() async {
+      final session = await (db.select(
+        db.sessions,
+      )..where((s) => s.id.equals(widget.sessionId))).getSingle();
+
+      final scores =
+          await (db.select(db.arrowScores)
+                ..where((s) => s.sessionId.equals(widget.sessionId))
+                ..orderBy([(s) => OrderingTerm(expression: s.index)]))
+              .get();
+
+      setState(() {
+        this.session = session;
+        this.scores = scores
+            .map((s) => possibleScoresById[s.scoreId]!)
+            .toList();
+      });
+    });
+  }
+
+  void _addScore(Score score) async {
+    scores.add(score);
+
+    final newScoreIndex = scores.length - 1;
+    await db
+        .into(db.arrowScores)
+        .insert(
+          ArrowScoresCompanion.insert(
+            sessionId: widget.sessionId,
+            index: newScoreIndex,
+            scoreId: score.id,
+          ),
+        );
+
+    setState(() {});
+  }
+
+  void _removeLastScore() async {
+    if (scores.isNotEmpty) {
+      scores.removeLast();
+
+      final lastScoreIndex = scores.length;
+      final query = db.delete(db.arrowScores)
+        ..where(
+          (s) =>
+              s.sessionId.equals(widget.sessionId) &
+              s.index.equals(lastScoreIndex),
+        );
+
+      await query.go();
+
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +132,10 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _ScoreSheet(scores: scores),
+                child: _ScoreSheet(
+                  scores: scores,
+                  arrowsPerEnd: session?.arrowsPerEnd ?? 6,
+                ),
               ),
             ),
           ),
@@ -66,18 +145,8 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
               top: false,
               child: ScoreKeyboard(
                 scores: possibleScores,
-                onScorePressed: (score) {
-                  setState(() {
-                    scores.add(score);
-                  });
-                },
-                onBackspacePressed: () {
-                  setState(() {
-                    if (scores.isNotEmpty) {
-                      scores.removeLast();
-                    }
-                  });
-                },
+                onScorePressed: _addScore,
+                onBackspacePressed: _removeLastScore,
               ),
             ),
           ),
@@ -88,15 +157,16 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
 }
 
 class _ScoreSheet extends StatelessWidget {
-  const _ScoreSheet({required this.scores});
+  const _ScoreSheet({required this.scores, required this.arrowsPerEnd});
 
   final List<Score> scores;
+  final int arrowsPerEnd;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        for (final (i, end) in scores.slices(6).indexed) ...[
+        for (final (i, end) in scores.slices(arrowsPerEnd).indexed) ...[
           Divider(),
           _ScoreSheetRow(index: i + 1, scores: end),
         ],
