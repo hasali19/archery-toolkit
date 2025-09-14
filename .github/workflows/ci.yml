@@ -1,0 +1,75 @@
+name: Flutter
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "*/latest"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: beta
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: |
+          echo $ANDROID_KEYSTORE | base64 -d > keystore.jks
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEYSTORE_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=$(pwd)/keystore.jks" >> android/key.properties
+          flutter build apk --build-number=$GITHUB_RUN_NUMBER --dart-define=GIT_COMMIT_HASH=$(git rev-parse HEAD) --split-per-abi
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: archery-toolkit-android
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+
+  release:
+    runs-on: ubuntu-latest
+    if: success() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    needs:
+      - build
+    concurrency:
+      group: flutter-release
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - run: |
+          ls -R artifacts
+          mkdir release_artifacts
+
+          echo "Preparing android apks"
+          cp artifacts/archery-toolkit-android/app-arm64-v8a-release.apk release_artifacts/archery-toolkit-arm64-v8a-release.apk
+          cp artifacts/archery-toolkit-android/app-armeabi-v7a-release.apk release_artifacts/archery-toolkit-armeabi-v7a-release.apk
+          cp artifacts/archery-toolkit-android/app-x86_64-release.apk release_artifacts/archery-toolkit-x86_64-release.apk
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          title: "Latest Build"
+          files: release_artifacts/*
