@@ -1,6 +1,7 @@
 import 'package:archery_toolkit/routes/session_scoring.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ScoreKeyboard extends StatelessWidget {
   const ScoreKeyboard({
@@ -97,7 +98,14 @@ class _KeyboardButton extends StatelessWidget {
       width: width,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(style: style, onPressed: onPressed, child: child),
+        child: ElevatedButton(
+          style: style,
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            onPressed();
+          },
+          child: child,
+        ),
       ),
     );
   }
