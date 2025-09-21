@@ -83,6 +83,7 @@ class SessionScoringPage extends StatefulWidget {
 
 class _SessionScoringPageState extends State<SessionScoringPage> {
   late final AppDatabase db;
+  late final ScrollController scrollController;
 
   Session? session;
   ScoringSystem? scoringSystem;
@@ -93,6 +94,7 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
     super.initState();
 
     db = context.read();
+    scrollController = ScrollController();
 
     scheduleMicrotask(() async {
       final session = await (db.select(
@@ -117,6 +119,12 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
     });
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    scrollController.dispose();
+  }
+
   void _addScore(Score score) async {
     scores.add(score);
 
@@ -130,6 +138,8 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
             scoreId: score.id,
           ),
         );
+
+    scrollController.jumpTo(0);
 
     setState(() {});
   }
@@ -147,6 +157,8 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
         );
 
       await query.go();
+
+      scrollController.jumpTo(0);
 
       setState(() {});
     }
@@ -175,6 +187,16 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
       body: SafeArea(
         child: Column(
           children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _ScoreSheet(
+                  scrollController: scrollController,
+                  scores: scores,
+                  arrowsPerEnd: session?.arrowsPerEnd ?? 6,
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -185,15 +207,6 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
                   Gap(8),
                   Text('Average: ${average.toStringAsFixed(2)}'),
                 ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _ScoreSheet(
-                  scores: scores,
-                  arrowsPerEnd: session?.arrowsPerEnd ?? 6,
-                ),
               ),
             ),
             if (scoringSystem case ScoringSystem scoringSystem)
@@ -212,17 +225,32 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
   }
 }
 
-class _ScoreSheet extends StatelessWidget {
-  const _ScoreSheet({required this.scores, required this.arrowsPerEnd});
+Iterable<(int, List<Score>)> _reversedEnds(
+  List<Score> scores,
+  int arrowsPerEnd,
+) {
+  final ends = scores.slices(arrowsPerEnd).indexed.toList();
+  return ends.reversed;
+}
 
+class _ScoreSheet extends StatelessWidget {
+  const _ScoreSheet({
+    required this.scrollController,
+    required this.scores,
+    required this.arrowsPerEnd,
+  });
+
+  final ScrollController scrollController;
   final List<Score> scores;
   final int arrowsPerEnd;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: scrollController,
+      reverse: true,
       children: [
-        for (final (i, end) in scores.slices(arrowsPerEnd).indexed) ...[
+        for (final (i, end) in _reversedEnds(scores, arrowsPerEnd)) ...[
           Divider(),
           _ScoreSheetRow(index: i + 1, scores: end),
         ],
