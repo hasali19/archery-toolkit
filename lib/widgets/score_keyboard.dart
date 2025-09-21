@@ -6,12 +6,12 @@ import 'package:flutter/services.dart';
 class ScoreKeyboard extends StatelessWidget {
   const ScoreKeyboard({
     super.key,
-    required this.scores,
+    required this.scoringSystem,
     required this.onScorePressed,
     required this.onBackspacePressed,
   });
 
-  final List<Score> scores;
+  final ScoringSystem scoringSystem;
 
   final void Function(Score score) onScorePressed;
   final void Function() onBackspacePressed;
@@ -29,7 +29,7 @@ class ScoreKeyboard extends StatelessWidget {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: possibleScores
+              children: scoringSystem.scores
                   .slices(columns - 1)
                   .map(
                     (row) => _KeyboardRow(

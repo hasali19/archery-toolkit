@@ -31,28 +31,29 @@ class _SessionsPageState extends State<SessionsPage> {
     db = context.read();
 
     sessionsStream =
-        (db.select(db.sessions)
-              ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
-            .watch()
-            .switchMap((sessions) {
-              return (db.select(db.arrowScores)..where(
-                    (s) =>
-                        s.sessionId.isIn(sessions.map((session) => session.id)),
-                  ))
-                  .watch()
-                  .map((arrowScores) {
-                    final totals = arrowScores.groupFoldBy(
-                      (score) => score.sessionId,
-                      (int? a, b) =>
-                          (a ?? 0) + possibleScoresById[b.scoreId]!.value,
-                    );
+        (db.select(
+          db.sessions,
+        )..orderBy([(s) => OrderingTerm.desc(s.startTime)])).watch().switchMap((
+          sessions,
+        ) {
+          return (db.select(db.arrowScores)..where(
+                (s) => s.sessionId.isIn(sessions.map((session) => session.id)),
+              ))
+              .watch()
+              .map((arrowScores) {
+                final arrowScoresBySession = arrowScores.groupListsBy(
+                  (score) => score.sessionId,
+                );
 
-                    return sessions.map(
-                      (session) =>
-                          (session: session, total: totals[session.id] ?? 0),
-                    );
-                  });
-            });
+                return sessions.map((session) {
+                  final scoringSystem = scoringSystems[session.scoringSystem]!;
+                  final total = arrowScoresBySession[session.id]
+                      ?.map((s) => scoringSystem.scoresById[s.scoreId]!.value)
+                      .sum;
+                  return (session: session, total: total ?? 0);
+                });
+              });
+        });
   }
 
   @override
@@ -140,6 +141,7 @@ class _SessionsPageState extends State<SessionsPage> {
                     arrowsPerEnd: model.arrowsPerEnd,
                     distance: model.distance,
                     distanceUnit: model.distanceUnit,
+                    scoringSystem: model.scoringSystem,
                   ),
                 );
 
@@ -165,6 +167,7 @@ abstract class _NewSessionModel with _$NewSessionModel {
     required int arrowsPerEnd,
     required int distance,
     required String distanceUnit,
+    required String scoringSystem,
   }) = __NewSessionModel;
 }
 
@@ -178,6 +181,7 @@ class _NewSessionDialog extends StatefulHookWidget {
 class _NewSessionDialogState extends State<_NewSessionDialog> {
   final _formKey = GlobalKey<FormState>();
 
+  String scoringSystem = 'metric';
   int arrowsPerEnd = 3;
   String distanceUnit = 'yards';
 
@@ -194,45 +198,64 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
       title: Text('New Session'),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 8,
-          children: [
-            TextFormField(
-              controller: distanceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                // hintText: 'Distance',
-                labelText: 'Distance',
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 8,
+            children: [
+              DropdownMenu(
+                initialSelection: scoringSystem,
+                dropdownMenuEntries: [
+                  for (final scoringSystem in scoringSystems.values)
+                    DropdownMenuEntry(
+                      value: scoringSystem.id,
+                      label: scoringSystem.displayName,
+                    ),
+                ],
+                label: Text('Scoring'),
+                expandedInsets: EdgeInsets.zero,
+                onSelected: (value) {
+                  if (value != null) {
+                    scoringSystem = value;
+                  }
+                },
               ),
-              validator: (value) {
-                if (value == null ||
-                    value.isEmpty ||
-                    int.tryParse(value) == null) {
-                  return 'Enter a valid number';
-                }
-                return null;
-              },
-            ),
-            Row(
-              spacing: 8,
-              children: [
-                _buildUnitsChoice('metres'),
-                _buildUnitsChoice('yards'),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Arrows per end', style: labelStyle),
-                Row(
-                  spacing: 8,
-                  children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
+              TextFormField(
+                controller: distanceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  // hintText: 'Distance',
+                  labelText: 'Distance',
                 ),
-              ],
-            ),
-          ],
+                validator: (value) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      int.tryParse(value) == null) {
+                    return 'Enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              Row(
+                spacing: 8,
+                children: [
+                  _buildUnitsChoice('metres'),
+                  _buildUnitsChoice('yards'),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Arrows per end', style: labelStyle),
+                  Row(
+                    spacing: 8,
+                    children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -253,6 +276,7 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                 arrowsPerEnd: arrowsPerEnd,
                 distance: distance,
                 distanceUnit: distanceUnit,
+                scoringSystem: scoringSystem,
               ),
             );
           },

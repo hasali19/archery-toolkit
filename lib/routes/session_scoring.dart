@@ -11,24 +11,51 @@ import 'package:provider/provider.dart';
 
 part 'session_scoring.freezed.dart';
 
-final possibleScores = [
-  Score(id: 1, label: 'X', value: 10, color: Colors.yellow),
-  Score(id: 2, label: '10', value: 10, color: Colors.yellow),
-  Score(id: 3, label: '9', value: 9, color: Colors.yellow),
-  Score(id: 4, label: '8', value: 8, color: Colors.red),
-  Score(id: 5, label: '7', value: 7, color: Colors.red),
-  Score(id: 6, label: '6', value: 6, color: Colors.blue),
-  Score(id: 7, label: '5', value: 5, color: Colors.blue),
-  Score(id: 8, label: '4', value: 4, color: Colors.black),
-  Score(id: 9, label: '3', value: 3, color: Colors.black),
-  Score(id: 10, label: '2', value: 2, color: Colors.white),
-  Score(id: 11, label: '1', value: 1, color: Colors.white),
-  Score(id: 12, label: 'M', value: 0, color: Colors.green),
-];
-
-final possibleScoresById = {
-  for (final score in possibleScores) score.id: score,
+final Map<String, ScoringSystem> scoringSystems = {
+  'metric': ScoringSystem(
+    id: 'metric',
+    displayName: 'Metric (10 Zone)',
+    scores: [
+      Score(id: 1, label: 'X', value: 10, color: Colors.yellow),
+      Score(id: 2, label: '10', value: 10, color: Colors.yellow),
+      Score(id: 3, label: '9', value: 9, color: Colors.yellow),
+      Score(id: 4, label: '8', value: 8, color: Colors.red),
+      Score(id: 5, label: '7', value: 7, color: Colors.red),
+      Score(id: 6, label: '6', value: 6, color: Colors.blue),
+      Score(id: 7, label: '5', value: 5, color: Colors.blue),
+      Score(id: 8, label: '4', value: 4, color: Colors.black),
+      Score(id: 9, label: '3', value: 3, color: Colors.black),
+      Score(id: 10, label: '2', value: 2, color: Colors.white),
+      Score(id: 11, label: '1', value: 1, color: Colors.white),
+      Score(id: 12, label: 'M', value: 0, color: Colors.green),
+    ],
+  ),
+  'imperial': ScoringSystem(
+    id: 'imperial',
+    displayName: 'Imperial (5 Zone)',
+    scores: [
+      Score(id: 1, label: '9', value: 9, color: Colors.yellow),
+      Score(id: 2, label: '7', value: 7, color: Colors.red),
+      Score(id: 3, label: '5', value: 5, color: Colors.blue),
+      Score(id: 4, label: '3', value: 3, color: Colors.black),
+      Score(id: 5, label: '1', value: 1, color: Colors.white),
+      Score(id: 6, label: 'M', value: 0, color: Colors.green),
+    ],
+  ),
 };
+
+final class ScoringSystem {
+  final String id;
+  final String displayName;
+  final List<Score> scores;
+  final Map<int, Score> scoresById;
+
+  ScoringSystem({
+    required this.id,
+    required this.displayName,
+    required this.scores,
+  }) : scoresById = {for (final score in scores) score.id: score};
+}
 
 @freezed
 abstract class Score with _$Score {
@@ -58,6 +85,7 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
   late final AppDatabase db;
 
   Session? session;
+  ScoringSystem? scoringSystem;
   List<Score> scores = [];
 
   @override
@@ -79,9 +107,12 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
 
       setState(() {
         this.session = session;
-        this.scores = scores
-            .map((s) => possibleScoresById[s.scoreId]!)
-            .toList();
+        scoringSystem = scoringSystems[session.scoringSystem];
+        if (scoringSystem case ScoringSystem scoringSystem) {
+          this.scores = scores
+              .map((s) => scoringSystem.scoresById[s.scoreId]!)
+              .toList();
+        }
       });
     });
   }
@@ -165,14 +196,15 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: ScoreKeyboard(
-                scores: possibleScores,
-                onScorePressed: _addScore,
-                onBackspacePressed: _removeLastScore,
+            if (scoringSystem case ScoringSystem scoringSystem)
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: ScoreKeyboard(
+                  scoringSystem: scoringSystem,
+                  onScorePressed: _addScore,
+                  onBackspacePressed: _removeLastScore,
+                ),
               ),
-            ),
           ],
         ),
       ),
