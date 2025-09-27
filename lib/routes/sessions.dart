@@ -1,13 +1,16 @@
-import 'package:archery_toolkit/db/db.dart';
+import 'package:archery_toolkit/core/models.dart';
+import 'package:archery_toolkit/core/sessions_repo.dart';
+import 'package:archery_toolkit/data/rounds.dart';
+import 'package:archery_toolkit/data/scoring.dart';
+import 'package:archery_toolkit/db/sessions.dart';
 import 'package:archery_toolkit/routes/session_scoring.dart';
 import 'package:collection/collection.dart';
-import 'package:drift/drift.dart' hide Column, JsonKey;
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:stream_transform/stream_transform.dart';
 
 part 'sessions.freezed.dart';
 
@@ -21,39 +24,57 @@ class SessionsPage extends StatefulWidget {
 }
 
 class _SessionsPageState extends State<SessionsPage> {
-  late final AppDatabase db;
+  late final SessionsRepo sessionsRepo;
   late final Stream<Iterable<({Session session, int total})>> sessionsStream;
 
   @override
   void initState() {
     super.initState();
 
-    db = context.read();
+    sessionsRepo = SessionsRepo(SessionsDao(context.read()));
 
-    sessionsStream =
-        (db.select(
-          db.sessions,
-        )..orderBy([(s) => OrderingTerm.desc(s.startTime)])).watch().switchMap((
-          sessions,
-        ) {
-          return (db.select(db.arrowScores)..where(
-                (s) => s.sessionId.isIn(sessions.map((session) => session.id)),
-              ))
-              .watch()
-              .map((arrowScores) {
-                final arrowScoresBySession = arrowScores.groupListsBy(
-                  (score) => score.sessionId,
-                );
+    sessionsStream = sessionsRepo.watchSessions().map(
+      (sessions) => sessions.map((session) {
+        final total = session.scores.map((s) => s.value).sum;
+        return (session: session, total: total);
+      }),
+    );
+  }
 
-                return sessions.map((session) {
-                  final scoringSystem = scoringSystems[session.scoringSystem]!;
-                  final total = arrowScoresBySession[session.id]
-                      ?.map((s) => scoringSystem.scoresById[s.scoreId]!.value)
-                      .sum;
-                  return (session: session, total: total ?? 0);
-                });
-              });
-        });
+  void _onCreateNewSession() async {
+    final _NewSessionModel? model = await showDialog(
+      context: context,
+      builder: (context) {
+        return _NewSessionDialog();
+      },
+    );
+
+    if (model != null) {
+      final newSession = switch (model.roundId) {
+        null => NewSession.freePractice(
+          arrowsPerEnd: model.arrowsPerEnd,
+          distance: model.distance,
+          distanceUnit: model.distanceUnit,
+          scoringSystem: model.scoringSystem,
+        ),
+        final roundId => NewSession.round(
+          roundId: roundId,
+          isCompetition: model.isCompetition,
+        ),
+      };
+
+      final session = await sessionsRepo.sessionsDao.insertSession(newSession);
+
+      if (mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) {
+              return SessionScoringPage(sessionId: session.id);
+            },
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -72,9 +93,7 @@ class _SessionsPageState extends State<SessionsPage> {
               children: [
                 for (final (:session, :total) in snapshot.data!)
                   ListTile(
-                    title: Text(
-                      'Free Practice • ${session.distance} ${session.distanceUnit}',
-                    ),
+                    title: Text(session.roundDetails.displayName),
                     subtitle: Text(_dateFormat.format(session.startTime)),
                     trailing: Text(
                       total.toString(),
@@ -104,9 +123,9 @@ class _SessionsPageState extends State<SessionsPage> {
                                 iconColor: Colors.red,
                                 onTap: () async {
                                   Navigator.pop(context);
-                                  await (db.delete(db.sessions)
-                                        ..where((s) => s.id.equals(session.id)))
-                                      .go();
+                                  await sessionsRepo.sessionsDao.removeSession(
+                                    session.id,
+                                  );
                                 },
                               ),
                             ],
@@ -124,38 +143,8 @@ class _SessionsPageState extends State<SessionsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'New Session',
+        onPressed: _onCreateNewSession,
         child: const Icon(Icons.add),
-        onPressed: () async {
-          final _NewSessionModel? model = await showDialog(
-            context: context,
-            builder: (context) {
-              return _NewSessionDialog();
-            },
-          );
-
-          if (model != null) {
-            final session = await db
-                .into(db.sessions)
-                .insertReturning(
-                  SessionsCompanion.insert(
-                    arrowsPerEnd: model.arrowsPerEnd,
-                    distance: model.distance,
-                    distanceUnit: model.distanceUnit,
-                    scoringSystem: model.scoringSystem,
-                  ),
-                );
-
-            if (context.mounted) {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return SessionScoringPage(sessionId: session.id);
-                  },
-                ),
-              );
-            }
-          }
-        },
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
@@ -164,10 +153,12 @@ class _SessionsPageState extends State<SessionsPage> {
 @freezed
 abstract class _NewSessionModel with _$NewSessionModel {
   factory _NewSessionModel({
+    required String? roundId,
     required int arrowsPerEnd,
     required int distance,
-    required String distanceUnit,
+    required DistanceUnit distanceUnit,
     required String scoringSystem,
+    required bool isCompetition,
   }) = __NewSessionModel;
 }
 
@@ -181,9 +172,11 @@ class _NewSessionDialog extends StatefulHookWidget {
 class _NewSessionDialogState extends State<_NewSessionDialog> {
   final _formKey = GlobalKey<FormState>();
 
+  String? roundId;
   String scoringSystem = 'metric';
   int arrowsPerEnd = 3;
-  String distanceUnit = 'yards';
+  DistanceUnit distanceUnit = DistanceUnit.yards;
+  bool isCompetition = false;
 
   @override
   Widget build(BuildContext context) {
@@ -205,55 +198,82 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
             spacing: 8,
             children: [
               DropdownMenu(
-                initialSelection: scoringSystem,
+                initialSelection: roundId,
                 dropdownMenuEntries: [
-                  for (final scoringSystem in scoringSystems.values)
-                    DropdownMenuEntry(
-                      value: scoringSystem.id,
-                      label: scoringSystem.displayName,
-                    ),
+                  DropdownMenuEntry(value: null, label: 'Free Practice'),
+                  for (final MapEntry(key: id, value: round)
+                      in standardRounds.entries)
+                    DropdownMenuEntry(value: id, label: round.displayName),
                 ],
-                label: Text('Scoring'),
+                label: Text('Round'),
                 expandedInsets: EdgeInsets.zero,
                 onSelected: (value) {
-                  if (value != null) {
-                    scoringSystem = value;
-                  }
+                  setState(() {
+                    roundId = value;
+                  });
                 },
               ),
-              TextFormField(
-                controller: distanceController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  // hintText: 'Distance',
-                  labelText: 'Distance',
+              if (roundId == null) ...[
+                Gap(8),
+                DropdownMenu(
+                  initialSelection: scoringSystem,
+                  dropdownMenuEntries: [
+                    for (final scoringSystem in scoringSystems.values)
+                      DropdownMenuEntry(
+                        value: scoringSystem.id,
+                        label: scoringSystem.displayName,
+                      ),
+                  ],
+                  label: Text('Scoring'),
+                  expandedInsets: EdgeInsets.zero,
+                  onSelected: (value) {
+                    if (value != null) {
+                      scoringSystem = value;
+                    }
+                  },
                 ),
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      int.tryParse(value) == null) {
-                    return 'Enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              Row(
-                spacing: 8,
-                children: [
-                  _buildUnitsChoice('metres'),
-                  _buildUnitsChoice('yards'),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Arrows per end', style: labelStyle),
-                  Row(
-                    spacing: 8,
-                    children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
+                TextFormField(
+                  controller: distanceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    // hintText: 'Distance',
+                    labelText: 'Distance',
                   ),
-                ],
-              ),
+                  validator: (value) {
+                    if (value == null ||
+                        value.isEmpty ||
+                        int.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                    return null;
+                  },
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    _buildUnitsChoice(DistanceUnit.metres),
+                    _buildUnitsChoice(DistanceUnit.yards),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Arrows per end', style: labelStyle),
+                    Row(
+                      spacing: 8,
+                      children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
+                    ),
+                  ],
+                ),
+              ],
+              if (roundId != null)
+                Row(
+                  spacing: 8,
+                  children: [
+                    _buildCompetitionChoice(false),
+                    _buildCompetitionChoice(true),
+                  ],
+                ),
             ],
           ),
         ),
@@ -273,10 +293,12 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
 
             Navigator.of(context).pop(
               _NewSessionModel(
+                roundId: roundId,
                 arrowsPerEnd: arrowsPerEnd,
                 distance: distance,
                 distanceUnit: distanceUnit,
                 scoringSystem: scoringSystem,
+                isCompetition: isCompetition,
               ),
             );
           },
@@ -286,9 +308,9 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
     );
   }
 
-  Widget _buildUnitsChoice(String value) {
+  Widget _buildUnitsChoice(DistanceUnit value) {
     return ChoiceChip(
-      label: Text(value),
+      label: Text(value.name),
       selected: distanceUnit == value,
       onSelected: (selected) {
         setState(() {
@@ -305,6 +327,18 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
       onSelected: (selected) {
         setState(() {
           arrowsPerEnd = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildCompetitionChoice(bool value) {
+    return ChoiceChip(
+      label: Text(value ? 'Competition' : 'Practice'),
+      selected: isCompetition == value,
+      onSelected: (selected) {
+        setState(() {
+          isCompetition = value;
         });
       },
     );

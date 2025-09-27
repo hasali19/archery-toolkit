@@ -1,76 +1,15 @@
 import 'dart:async';
+import 'dart:math';
 
-import 'package:archery_toolkit/db/db.dart';
+import 'package:archery_toolkit/core/models.dart';
+import 'package:archery_toolkit/core/sessions_repo.dart';
+import 'package:archery_toolkit/data/scoring.dart';
+import 'package:archery_toolkit/db/sessions.dart';
 import 'package:archery_toolkit/widgets/score_keyboard.dart';
 import 'package:collection/collection.dart';
-import 'package:drift/drift.dart' hide Column, JsonKey;
 import 'package:flutter/material.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
-
-part 'session_scoring.freezed.dart';
-
-final Map<String, ScoringSystem> scoringSystems = {
-  'metric': ScoringSystem(
-    id: 'metric',
-    displayName: 'Metric (10 Zone)',
-    scores: [
-      Score(id: 1, label: 'X', value: 10, color: Colors.yellow),
-      Score(id: 2, label: '10', value: 10, color: Colors.yellow),
-      Score(id: 3, label: '9', value: 9, color: Colors.yellow),
-      Score(id: 4, label: '8', value: 8, color: Colors.red),
-      Score(id: 5, label: '7', value: 7, color: Colors.red),
-      Score(id: 6, label: '6', value: 6, color: Colors.blue),
-      Score(id: 7, label: '5', value: 5, color: Colors.blue),
-      Score(id: 8, label: '4', value: 4, color: Colors.black),
-      Score(id: 9, label: '3', value: 3, color: Colors.black),
-      Score(id: 10, label: '2', value: 2, color: Colors.white),
-      Score(id: 11, label: '1', value: 1, color: Colors.white),
-      Score(id: 12, label: 'M', value: 0, color: Colors.green),
-    ],
-  ),
-  'imperial': ScoringSystem(
-    id: 'imperial',
-    displayName: 'Imperial (5 Zone)',
-    scores: [
-      Score(id: 1, label: '9', value: 9, color: Colors.yellow),
-      Score(id: 2, label: '7', value: 7, color: Colors.red),
-      Score(id: 3, label: '5', value: 5, color: Colors.blue),
-      Score(id: 4, label: '3', value: 3, color: Colors.black),
-      Score(id: 5, label: '1', value: 1, color: Colors.white),
-      Score(id: 6, label: 'M', value: 0, color: Colors.green),
-    ],
-  ),
-};
-
-final class ScoringSystem {
-  final String id;
-  final String displayName;
-  final List<Score> scores;
-  final Map<int, Score> scoresById;
-
-  ScoringSystem({
-    required this.id,
-    required this.displayName,
-    required this.scores,
-  }) : scoresById = {for (final score in scores) score.id: score};
-}
-
-@freezed
-abstract class Score with _$Score {
-  const Score._();
-
-  const factory Score({
-    required int id,
-    required String label,
-    required int value,
-    required Color color,
-  }) = _Score;
-
-  Color get foregroundColor =>
-      color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-}
 
 class SessionScoringPage extends StatefulWidget {
   const SessionScoringPage({super.key, required this.sessionId});
@@ -82,39 +21,25 @@ class SessionScoringPage extends StatefulWidget {
 }
 
 class _SessionScoringPageState extends State<SessionScoringPage> {
-  late final AppDatabase db;
+  late final SessionsRepo sessionsRepo;
   late final ScrollController scrollController;
 
   Session? session;
-  ScoringSystem? scoringSystem;
   List<Score> scores = [];
 
   @override
   void initState() {
     super.initState();
 
-    db = context.read();
+    sessionsRepo = SessionsRepo(SessionsDao(context.read()));
     scrollController = ScrollController();
 
     scheduleMicrotask(() async {
-      final session = await (db.select(
-        db.sessions,
-      )..where((s) => s.id.equals(widget.sessionId))).getSingle();
-
-      final scores =
-          await (db.select(db.arrowScores)
-                ..where((s) => s.sessionId.equals(widget.sessionId))
-                ..orderBy([(s) => OrderingTerm(expression: s.index)]))
-              .get();
+      final session = await sessionsRepo.getSession(widget.sessionId);
 
       setState(() {
         this.session = session;
-        scoringSystem = scoringSystems[session.scoringSystem];
-        if (scoringSystem case ScoringSystem scoringSystem) {
-          this.scores = scores
-              .map((s) => scoringSystem.scoresById[s.scoreId]!)
-              .toList();
-        }
+        scores = session.scores;
       });
     });
   }
@@ -126,42 +51,78 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
   }
 
   void _addScore(Score score) async {
+    final newScoreIndex = scores.length;
+
     scores.add(score);
 
-    final newScoreIndex = scores.length - 1;
-    await db
-        .into(db.arrowScores)
-        .insert(
-          ArrowScoresCompanion.insert(
-            sessionId: widget.sessionId,
-            index: newScoreIndex,
-            scoreId: score.id,
-          ),
-        );
+    await sessionsRepo.sessionsDao.insertScore(
+      widget.sessionId,
+      newScoreIndex,
+      score.id,
+    );
 
-    scrollController.jumpTo(0);
+    _scrollToArrow(newScoreIndex);
 
     setState(() {});
   }
 
   void _removeLastScore() async {
     if (scores.isNotEmpty) {
+      final lastScoreIndex = scores.length - 1;
+
       scores.removeLast();
 
-      final lastScoreIndex = scores.length;
-      final query = db.delete(db.arrowScores)
-        ..where(
-          (s) =>
-              s.sessionId.equals(widget.sessionId) &
-              s.index.equals(lastScoreIndex),
-        );
+      await sessionsRepo.sessionsDao.removeScore(
+        widget.sessionId,
+        lastScoreIndex,
+      );
 
-      await query.go();
-
-      scrollController.jumpTo(0);
+      _scrollToArrow(lastScoreIndex);
 
       setState(() {});
     }
+  }
+
+  void _scrollToArrow(int arrowIndex) {
+    final scrollPosition = scrollController.position;
+    final arrowOffset = _calculateScrollOffsetForArrow(arrowIndex);
+
+    if (arrowOffset < scrollPosition.pixels ||
+        arrowOffset >
+            scrollPosition.pixels + scrollPosition.viewportDimension) {
+      scrollController.jumpTo(min(arrowOffset, scrollPosition.maxScrollExtent));
+    }
+  }
+
+  double _calculateScrollOffsetForArrow(int arrowIndex) {
+    final session = this.session;
+    if (session == null) {
+      throw StateError('Session is null');
+    }
+
+    final currentDistanceIndex = session.roundDetails.distances.indexWhere(
+      (d) => arrowIndex >= d.firstArrowIndex && arrowIndex <= d.lastArrowIndex,
+    );
+
+    double offset = 0;
+    for (int i = 0; i <= currentDistanceIndex; i++) {
+      final distance = session.roundDetails.distances[i];
+
+      // Add height of distance header
+      offset += _ScoreSheet.distanceHeaderHeight;
+
+      final ends = min(arrowIndex ~/ distance.arrowsPerEnd, distance.ends);
+
+      // Add heights of end rows
+      offset += ends * _ScoreSheetRow.height;
+
+      // Add heights of end row dividers
+      offset += (ends + 1) * _ScoreSheet.dividerHeight;
+
+      arrowIndex -= ends * distance.arrowsPerEnd;
+    }
+
+    return offset - _ScoreSheet.dividerHeight / 2;
   }
 
   @override
@@ -171,14 +132,12 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Free Practice'),
+        title: Text(session?.roundDetails.displayName ?? ''),
         actions: [
           IconButton(
             onPressed: () async {
               Navigator.pop(context);
-              await (db.delete(
-                db.sessions,
-              )..where((s) => s.id.equals(widget.sessionId))).go();
+              await sessionsRepo.sessionsDao.removeSession(widget.sessionId);
             },
             icon: Icon(Icons.delete),
           ),
@@ -193,23 +152,24 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
                 child: _ScoreSheet(
                   scrollController: scrollController,
                   scores: scores,
-                  arrowsPerEnd: session?.arrowsPerEnd ?? 6,
+                  distances: session?.roundDetails.distances ?? [],
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('${session?.distance} ${session?.distanceUnit}'),
-                  Spacer(),
                   Text('Total: $total'),
                   Gap(8),
                   Text('Average: ${average.toStringAsFixed(2)}'),
                 ],
               ),
             ),
-            if (scoringSystem case ScoringSystem scoringSystem)
+            if (session case Session(
+              roundDetails: RoundDetails(:final scoringSystem),
+            ))
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: ScoreKeyboard(
@@ -225,43 +185,81 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
   }
 }
 
-Iterable<(int, List<Score>)> _reversedEnds(
-  List<Score> scores,
-  int arrowsPerEnd,
-) {
-  final ends = scores.slices(arrowsPerEnd).indexed.toList();
-  return ends.reversed;
-}
-
 class _ScoreSheet extends StatelessWidget {
+  static const distanceHeaderHeight = 36.0;
+  static const dividerHeight = 16.0;
+
   const _ScoreSheet({
     required this.scrollController,
     required this.scores,
-    required this.arrowsPerEnd,
+    required this.distances,
   });
 
   final ScrollController scrollController;
   final List<Score> scores;
-  final int arrowsPerEnd;
+  final List<RoundDistance> distances;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return CustomScrollView(
       controller: scrollController,
-      reverse: true,
-      children: [
-        for (final (i, end) in _reversedEnds(scores, arrowsPerEnd)) ...[
-          Divider(),
-          _ScoreSheetRow(index: i + 1, scores: end),
-        ],
+      slivers: [
+        for (int i = 0; i < distances.length; i++) _buildDistanceScores(i),
+      ],
+    );
+  }
 
-        if (scores.isNotEmpty) Divider(),
+  Widget _buildDistanceScores(int index) {
+    final distance = distances[index];
+
+    final endOffset = distances.slice(0, index).map((d) => d.ends).sum;
+    final scoreOffset = distances
+        .slice(0, index)
+        .map((d) => d.arrowsPerEnd * d.ends)
+        .sum;
+
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Container(
+            height: distanceHeaderHeight,
+            padding: EdgeInsets.all(8),
+            child: Text(
+              '${distance.distanceValue.value} ${distance.distanceValue.unit.name}',
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(child: Divider()),
+        SliverList.separated(
+          itemCount: distance.ends,
+          itemBuilder: (context, index) {
+            final startIndex = scoreOffset + index * distance.arrowsPerEnd;
+
+            final List<Score> scores;
+            if (startIndex >= this.scores.length) {
+              scores = [];
+            } else {
+              scores = this.scores.slice(
+                startIndex,
+                min(startIndex + distance.arrowsPerEnd, this.scores.length),
+              );
+            }
+
+            return _ScoreSheetRow(index: endOffset + index + 1, scores: scores);
+          },
+          separatorBuilder: (context, index) {
+            return Divider();
+          },
+        ),
+        SliverToBoxAdapter(child: Divider()),
       ],
     );
   }
 }
 
 class _ScoreSheetRow extends StatelessWidget {
+  static const height = 44.0;
+
   const _ScoreSheetRow({required this.index, required this.scores});
 
   final int index;
@@ -270,49 +268,52 @@ class _ScoreSheetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      children: [
-        Container(
-          width: 42,
-          padding: EdgeInsets.only(left: 8, right: 16),
-          child: Text(
-            '$index',
-            textAlign: TextAlign.end,
-            style: theme.textTheme.labelMedium!.copyWith(
-              color: theme.textTheme.labelMedium!.color!.withAlpha(150),
-            ),
-          ),
-        ),
-
-        for (final score in scores)
+    return SizedBox(
+      height: height,
+      child: Row(
+        children: [
           Container(
-            width: 36,
-            height: 36,
-            margin: EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: score.color,
-            ),
-            child: Center(
-              child: Text(
-                score.label,
-                style: TextStyle(color: score.foregroundColor),
+            width: 42,
+            padding: EdgeInsets.only(left: 8, right: 16),
+            child: Text(
+              '$index',
+              textAlign: TextAlign.end,
+              style: theme.textTheme.labelMedium!.copyWith(
+                color: theme.textTheme.labelMedium!.color!.withAlpha(150),
               ),
             ),
           ),
 
-        Spacer(),
+          for (final score in scores)
+            Container(
+              width: 36,
+              height: 36,
+              margin: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: score.color,
+              ),
+              child: Center(
+                child: Text(
+                  score.label,
+                  style: TextStyle(color: score.foregroundColor),
+                ),
+              ),
+            ),
 
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Text(
-            scores.map((s) => s.value).sum.toString(),
-            style: theme.textTheme.bodyLarge!.copyWith(
-              color: theme.colorScheme.primary,
+          Spacer(),
+
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              scores.map((s) => s.value).sum.toString(),
+              style: theme.textTheme.bodyLarge!.copyWith(
+                color: theme.colorScheme.primary,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

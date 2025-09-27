@@ -1,3 +1,4 @@
+import 'package:archery_toolkit/core/models.dart' show DistanceUnit;
 import 'package:archery_toolkit/db/db.steps.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/internal/versioned_schema.dart';
@@ -15,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,16 +64,31 @@ extension Migrations on GeneratedDatabase {
         ),
       );
     },
+    from2To3: (m, schema) async {
+      await m.addColumn(schema.sessions, schema.sessions.roundId);
+
+      await m.alterTable(
+        TableMigration(
+          schema.sessions,
+          newColumns: [schema.sessions.isCompetition],
+          columnTransformer: {schema.sessions.scoringSystem: Constant(false)},
+        ),
+      );
+
+      await m.alterTable(TableMigration(schema.sessions));
+    },
   );
 }
 
 class Sessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get startTime => dateTime().withDefault(currentDateAndTime)();
-  IntColumn get arrowsPerEnd => integer()();
-  IntColumn get distance => integer()();
-  TextColumn get distanceUnit => text()();
-  TextColumn get scoringSystem => text()();
+  TextColumn get roundId => text().nullable()();
+  IntColumn get arrowsPerEnd => integer().nullable()();
+  IntColumn get distance => integer().nullable()();
+  TextColumn get distanceUnit => textEnum<DistanceUnit>().nullable()();
+  TextColumn get scoringSystem => text().nullable()();
+  BoolColumn get isCompetition => boolean()();
 }
 
 class ArrowScores extends Table {

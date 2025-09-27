@@ -65,14 +65,14 @@ jobs:
           mkdir release_artifacts
 
           echo "Preparing android apks"
-          cp artifacts/archery-toolkit-android/app-arm64-v8a-release.apk release_artifacts/archery-toolkit-arm64-v8a-release.apk
-          cp artifacts/archery-toolkit-android/app-armeabi-v7a-release.apk release_artifacts/archery-toolkit-armeabi-v7a-release.apk
-          cp artifacts/archery-toolkit-android/app-x86_64-release.apk release_artifacts/archery-toolkit-x86_64-release.apk
+          cp artifacts/archery-toolkit-android/app-arm64-v8a-release.apk release_artifacts/archery-toolkit-arm64-v8a-release-${{ github.run_number }}.apk
+          cp artifacts/archery-toolkit-android/app-armeabi-v7a-release.apk release_artifacts/archery-toolkit-armeabi-v7a-release-${{ github.run_number }}.apk
+          cp artifacts/archery-toolkit-android/app-x86_64-release.apk release_artifacts/archery-toolkit-x86_64-release-${{ github.run_number }}.apk
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: "v${{ github.run_number }}"
           prerelease: false
-          title: "Latest Build"
+          title: "v${{ github.run_number }}"
           files: release_artifacts/*

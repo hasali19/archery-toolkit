@@ -1,4 +1,4 @@
-import 'package:archery_toolkit/routes/session_scoring.dart';
+import 'package:archery_toolkit/data/scoring.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
