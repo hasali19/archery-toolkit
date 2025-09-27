@@ -65,13 +65,11 @@ extension Migrations on GeneratedDatabase {
       );
     },
     from2To3: (m, schema) async {
-      await m.addColumn(schema.sessions, schema.sessions.roundId);
-
       await m.alterTable(
         TableMigration(
           schema.sessions,
-          newColumns: [schema.sessions.isCompetition],
-          columnTransformer: {schema.sessions.scoringSystem: Constant(false)},
+          newColumns: [schema.sessions.roundId, schema.sessions.isCompetition],
+          columnTransformer: {schema.sessions.isCompetition: Constant(false)},
         ),
       );
 
