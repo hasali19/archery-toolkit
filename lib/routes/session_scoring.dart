@@ -39,7 +39,7 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
 
       setState(() {
         this.session = session;
-        scores = session.scores;
+        scores = [...session.scores];
       });
     });
   }
@@ -240,14 +240,31 @@ class _ScoreSheet extends StatelessWidget {
         .map((d) => d.arrowsPerEnd * d.ends)
         .sum;
 
+    int distanceTotal = 0;
+    if (distance.firstArrowIndex < scores.length) {
+      distanceTotal = scores
+          .slice(
+            distance.firstArrowIndex,
+            min(distance.firstArrowIndex + distance.arrows, scores.length),
+          )
+          .map((s) => s.value)
+          .sum;
+    }
+
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(
           child: Container(
             height: distanceHeaderHeight,
             padding: EdgeInsets.all(8),
-            child: Text(
-              '${distance.distanceValue.value} ${distance.distanceValue.unit.name}',
+            child: Row(
+              children: [
+                Text(
+                  '${distance.distanceValue.value} ${distance.distanceValue.unit.name}',
+                ),
+                Spacer(),
+                Text('Total: $distanceTotal'),
+              ],
             ),
           ),
         ),
