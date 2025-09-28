@@ -1,19 +1,17 @@
 import 'package:archery_toolkit/data/scoring.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-class Session {
-  final int id;
-  final DateTime startTime;
-  final RoundDetails roundDetails;
-  final List<Score> scores;
-  final bool isCompetition;
+part 'models.freezed.dart';
 
-  const Session({
-    required this.id,
-    required this.startTime,
-    required this.roundDetails,
-    required this.scores,
-    required this.isCompetition,
-  });
+@freezed
+abstract class Session with _$Session {
+  const factory Session({
+    required int id,
+    required DateTime startTime,
+    required RoundDetails roundDetails,
+    required List<Score> scores,
+    required bool isCompetition,
+  }) = _Session;
 }
 
 class RoundDetails {

@@ -136,6 +136,28 @@ class _SessionScoringPageState extends State<SessionScoringPage> {
         actions: [
           IconButton(
             onPressed: () async {
+              final startDate = await showDatePicker(
+                context: context,
+                firstDate: DateTime.fromMillisecondsSinceEpoch(0),
+                lastDate: DateTime.now(),
+                initialDate: session?.startTime,
+              );
+
+              if (startDate != null) {
+                await sessionsRepo.sessionsDao.updateSessionStartTime(
+                  widget.sessionId,
+                  startDate,
+                );
+
+                setState(() {
+                  session = session?.copyWith(startTime: startDate);
+                });
+              }
+            },
+            icon: Icon(Icons.calendar_month),
+          ),
+          IconButton(
+            onPressed: () async {
               Navigator.pop(context);
               await sessionsRepo.sessionsDao.removeSession(widget.sessionId);
             },

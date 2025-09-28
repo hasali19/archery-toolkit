@@ -104,4 +104,9 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
       ..where((s) => s.sessionId.equals(sessionId) & s.index.equals(index));
     await query.go();
   }
+
+  Future<void> updateSessionStartTime(int sessionId, DateTime startTime) async {
+    final query = update(sessions)..where((s) => s.id.equals(sessionId));
+    await query.write(SessionsCompanion(startTime: Value(startTime)));
+  }
 }
