@@ -15,11 +15,13 @@ abstract class Session with _$Session {
 }
 
 class RoundDetails {
+  final String? id;
   final String displayName;
   final ScoringSystem scoringSystem;
   final List<RoundDistance> distances;
 
   const RoundDetails({
+    required this.id,
     required this.displayName,
     required this.scoringSystem,
     required this.distances,

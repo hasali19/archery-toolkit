@@ -3,6 +3,7 @@ import 'package:archery_toolkit/data/scoring.dart';
 
 final standardRounds = {
   'portsmouth': RoundDetails(
+    id: 'portsmouth',
     displayName: 'Portsmouth',
     scoringSystem: ScoringSystems.metric,
     distances: [
@@ -16,6 +17,7 @@ final standardRounds = {
     ],
   ),
   'short_metric_1': RoundDetails(
+    id: 'short_metric_1',
     displayName: "Short Metric I",
     scoringSystem: ScoringSystems.metric,
     distances: [

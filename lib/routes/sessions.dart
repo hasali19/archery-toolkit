@@ -16,6 +16,18 @@ part 'sessions.freezed.dart';
 
 final DateFormat _dateFormat = DateFormat('dd MMM y');
 
+class SessionsModel {
+  final List<Session> sessions;
+  final Map<int, int> totals;
+  final Set<int> pbSessions;
+
+  SessionsModel({
+    required this.sessions,
+    required this.totals,
+    required this.pbSessions,
+  });
+}
+
 class SessionsPage extends StatefulWidget {
   const SessionsPage({super.key});
 
@@ -25,7 +37,7 @@ class SessionsPage extends StatefulWidget {
 
 class _SessionsPageState extends State<SessionsPage> {
   late final SessionsRepo sessionsRepo;
-  late final Stream<Iterable<({Session session, int total})>> sessionsStream;
+  late final Stream<SessionsModel> sessionsStream;
 
   @override
   void initState() {
@@ -33,12 +45,30 @@ class _SessionsPageState extends State<SessionsPage> {
 
     sessionsRepo = SessionsRepo(SessionsDao(context.read()));
 
-    sessionsStream = sessionsRepo.watchSessions().map(
-      (sessions) => sessions.map((session) {
+    sessionsStream = sessionsRepo.watchSessions().map((sessions) {
+      final sessionsList = sessions.toList();
+      final totals = <int, int>{};
+      final pbSessions = <String, Session>{};
+
+      for (final session in sessionsList) {
         final total = session.scores.map((s) => s.value).sum;
-        return (session: session, total: total);
-      }),
-    );
+
+        totals[session.id] = total;
+
+        if (session.roundDetails.id case String roundId) {
+          if (!pbSessions.containsKey(session.roundDetails.id) ||
+              total > totals[pbSessions[roundId]!.id]!) {
+            pbSessions[roundId] = session;
+          }
+        }
+      }
+
+      return SessionsModel(
+        sessions: sessionsList,
+        totals: totals,
+        pbSessions: pbSessions.values.map((s) => s.id).toSet(),
+      );
+    });
   }
 
   void _onCreateNewSession() async {
@@ -89,15 +119,27 @@ class _SessionsPageState extends State<SessionsPage> {
           }
 
           if (snapshot.hasData) {
+            final SessionsModel(:sessions, :totals, :pbSessions) =
+                snapshot.data!;
             return ListView(
               children: [
-                for (final (:session, :total) in snapshot.data!)
+                for (final session in sessions)
                   ListTile(
                     title: Text(session.roundDetails.displayName),
                     subtitle: Text(_dateFormat.format(session.startTime)),
-                    trailing: Text(
-                      total.toString(),
-                      style: Theme.of(context).textTheme.titleLarge,
+                    trailing: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          totals[session.id].toString(),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        if (pbSessions.contains(session.id))
+                          Text(
+                            "PB",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                      ],
                     ),
                     onTap: () {
                       Navigator.of(context).push(

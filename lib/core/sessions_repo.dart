@@ -34,6 +34,7 @@ Session _mapDbToSession(db.Session session, List<db.ArrowScore> scores) {
     final distance = DistanceValue(session.distance!, session.distanceUnit!);
 
     roundDetails = RoundDetails(
+      id: null,
       displayName: 'Free Practice • ${distance.value} ${distance.unit.name}',
       scoringSystem: scoringSystems[session.scoringSystem]!,
       distances: [
