@@ -89,6 +89,7 @@ class _SessionsPageState extends State<SessionsPage> {
         ),
         final roundId => NewSession.round(
           roundId: roundId,
+          arrowsPerEnd: model.arrowsPerEnd,
           isCompetition: model.isCompetition,
         ),
       };
@@ -252,8 +253,16 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                 label: Text('Round'),
                 expandedInsets: EdgeInsets.zero,
                 onSelected: (value) {
+                  final defaultArrowsPerEnd = standardRoundsById[value]
+                      ?.distances
+                      .first
+                      .defaultArrowsPerEnd;
+
                   setState(() {
                     roundId = value;
+                    if (defaultArrowsPerEnd != null) {
+                      arrowsPerEnd = defaultArrowsPerEnd;
+                    }
                   });
                 },
               ),
@@ -299,17 +308,17 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                     _buildUnitsChoice(DistanceUnit.yards),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Arrows per end', style: labelStyle),
-                    Row(
-                      spacing: 8,
-                      children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
-                    ),
-                  ],
-                ),
               ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Arrows per end', style: labelStyle),
+                  Row(
+                    spacing: 8,
+                    children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
+                  ),
+                ],
+              ),
               if (roundId != null)
                 Row(
                   spacing: 8,

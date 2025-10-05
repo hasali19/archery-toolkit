@@ -16,9 +16,9 @@ final class NewSession {
 
   const NewSession.round({
     required String this.roundId,
+    required this.arrowsPerEnd,
     required this.isCompetition,
-  }) : arrowsPerEnd = null,
-       distance = null,
+  }) : distance = null,
        distanceUnit = null,
        scoringSystem = null;
 
