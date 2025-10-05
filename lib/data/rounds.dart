@@ -1,40 +1,64 @@
 import 'package:archery_toolkit/core/models.dart';
 import 'package:archery_toolkit/data/scoring.dart';
 
-final standardRounds = {
-  'portsmouth': RoundDetails(
+final class StandardRound {
+  final String id;
+  final String displayName;
+  final ScoringSystem scoringSystem;
+  final List<StandardRoundDistance> distances;
+
+  const StandardRound({
+    required this.id,
+    required this.displayName,
+    required this.scoringSystem,
+    required this.distances,
+  });
+}
+
+final class StandardRoundDistance {
+  final DistanceValue distanceValue;
+  final int arrows;
+  final int defaultArrowsPerEnd;
+
+  const StandardRoundDistance({
+    required this.distanceValue,
+    required this.arrows,
+    required this.defaultArrowsPerEnd,
+  });
+}
+
+final standardRounds = [
+  StandardRound(
     id: 'portsmouth',
     displayName: 'Portsmouth',
     scoringSystem: ScoringSystems.metric,
     distances: [
-      RoundDistance(
+      StandardRoundDistance(
         distanceValue: DistanceValue(20, DistanceUnit.yards),
-        arrowsPerEnd: 3,
-        ends: 20,
-        firstArrowIndex: 0,
-        firstEndIndex: 0,
+        arrows: 60,
+        defaultArrowsPerEnd: 3,
       ),
     ],
   ),
-  'short_metric_1': RoundDetails(
+  StandardRound(
     id: 'short_metric_1',
-    displayName: "Short Metric I",
+    displayName: 'Short Metric I',
     scoringSystem: ScoringSystems.metric,
     distances: [
-      RoundDistance(
+      StandardRoundDistance(
         distanceValue: DistanceValue(50, DistanceUnit.metres),
-        arrowsPerEnd: 6,
-        ends: 6,
-        firstArrowIndex: 0,
-        firstEndIndex: 0,
+        arrows: 36,
+        defaultArrowsPerEnd: 6,
       ),
-      RoundDistance(
+      StandardRoundDistance(
         distanceValue: DistanceValue(30, DistanceUnit.metres),
-        arrowsPerEnd: 3,
-        ends: 12,
-        firstArrowIndex: 3 * 12,
-        firstEndIndex: 6,
+        arrows: 36,
+        defaultArrowsPerEnd: 3,
       ),
     ],
   ),
+];
+
+final standardRoundsById = {
+  for (final round in standardRounds) round.id: round,
 };

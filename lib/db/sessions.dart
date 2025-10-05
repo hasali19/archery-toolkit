@@ -75,7 +75,7 @@ class SessionsDao extends DatabaseAccessor<AppDatabase>
     return await into(sessions).insertReturning(
       SessionsCompanion.insert(
         roundId: Value(session.roundId),
-        arrowsPerEnd: Value(session.arrowsPerEnd),
+        arrowsPerEnd: session.arrowsPerEnd?.toString() ?? '',
         distance: Value(session.distance),
         distanceUnit: Value(session.distanceUnit),
         scoringSystem: Value(session.scoringSystem),

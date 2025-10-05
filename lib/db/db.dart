@@ -16,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +75,19 @@ extension Migrations on GeneratedDatabase {
 
       await m.alterTable(TableMigration(schema.sessions));
     },
+    from3To4: (m, schema) async {
+      await m.alterTable(
+        TableMigration(
+          schema.sessions,
+          columnTransformer: {
+            schema.sessions.arrowsPerEnd: coalesce([
+              schema.sessions.arrowsPerEnd,
+              Constant(''),
+            ]).cast<String>(),
+          },
+        ),
+      );
+    },
   );
 }
 
@@ -82,7 +95,7 @@ class Sessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get startTime => dateTime().withDefault(currentDateAndTime)();
   TextColumn get roundId => text().nullable()();
-  IntColumn get arrowsPerEnd => integer().nullable()();
+  TextColumn get arrowsPerEnd => text()();
   IntColumn get distance => integer().nullable()();
   TextColumn get distanceUnit => textEnum<DistanceUnit>().nullable()();
   TextColumn get scoringSystem => text().nullable()();

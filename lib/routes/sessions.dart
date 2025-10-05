@@ -243,9 +243,11 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                 initialSelection: roundId,
                 dropdownMenuEntries: [
                   DropdownMenuEntry(value: null, label: 'Free Practice'),
-                  for (final MapEntry(key: id, value: round)
-                      in standardRounds.entries)
-                    DropdownMenuEntry(value: id, label: round.displayName),
+                  for (final round in standardRounds)
+                    DropdownMenuEntry(
+                      value: round.id,
+                      label: round.displayName,
+                    ),
                 ],
                 label: Text('Round'),
                 expandedInsets: EdgeInsets.zero,

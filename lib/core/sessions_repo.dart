@@ -28,8 +28,44 @@ class SessionsRepo {
 
 Session _mapDbToSession(db.Session session, List<db.ArrowScore> scores) {
   final RoundDetails roundDetails;
+  final arrowsPerEnds = session.arrowsPerEnd
+      .split(',')
+      .map((i) => int.tryParse(i));
+
   if (session.roundId case String roundId) {
-    roundDetails = standardRounds[roundId]!;
+    final round = standardRoundsById[roundId]!;
+
+    int arrowsOffset = 0;
+    int endsOffset = 0;
+
+    final distances = <RoundDistance>[];
+    for (final (distance, maybeArrowsPerEnd) in zip(
+      round.distances,
+      arrowsPerEnds,
+    )) {
+      final arrowsPerEnd = maybeArrowsPerEnd ?? distance.defaultArrowsPerEnd;
+      final ends = distance.arrows ~/ arrowsPerEnd;
+
+      distances.add(
+        RoundDistance(
+          distanceValue: distance.distanceValue,
+          arrowsPerEnd: arrowsPerEnd,
+          ends: ends,
+          firstArrowIndex: arrowsOffset,
+          firstEndIndex: endsOffset,
+        ),
+      );
+
+      arrowsOffset += distance.arrows;
+      endsOffset += ends;
+    }
+
+    roundDetails = RoundDetails(
+      id: roundId,
+      displayName: round.displayName,
+      scoringSystem: round.scoringSystem,
+      distances: distances,
+    );
   } else {
     final distance = DistanceValue(session.distance!, session.distanceUnit!);
 
@@ -40,7 +76,7 @@ Session _mapDbToSession(db.Session session, List<db.ArrowScore> scores) {
       distances: [
         RoundDistance(
           distanceValue: distance,
-          arrowsPerEnd: session.arrowsPerEnd!,
+          arrowsPerEnd: arrowsPerEnds.first!,
           ends: 99,
           firstArrowIndex: 0,
           firstEndIndex: 0,
@@ -58,4 +94,22 @@ Session _mapDbToSession(db.Session session, List<db.ArrowScore> scores) {
         .toList(),
     isCompetition: session.isCompetition,
   );
+}
+
+Iterable<(T, U?)> zip<T, U>(Iterable<T> ts, Iterable<U> us) sync* {
+  final tsIter = ts.iterator;
+  final usIter = us.iterator;
+
+  while (true) {
+    if (!tsIter.moveNext()) {
+      break;
+    }
+
+    final t = tsIter.current;
+    if (usIter.moveNext()) {
+      yield (t, usIter.current);
+    } else {
+      yield (t, null);
+    }
+  }
 }

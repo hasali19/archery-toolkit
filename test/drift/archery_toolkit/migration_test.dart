@@ -9,6 +9,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -123,6 +124,67 @@ void main() {
         expect(
           await newDb.select(newDb.arrowScores).get(),
           expectedNewArrowScoresData,
+        );
+      },
+    );
+  });
+
+  test('migration from v3 to v4 does not corrupt data', () async {
+    final startTime = DateTime(2025);
+    final oldSessionsData = <v3.SessionsData>[
+      v3.SessionsData(
+        id: 1,
+        startTime: startTime,
+        arrowsPerEnd: 6,
+        distance: 30,
+        distanceUnit: 'metres',
+        scoringSystem: 'metric',
+        isCompetition: false,
+      ),
+      v3.SessionsData(
+        id: 2,
+        startTime: startTime,
+        arrowsPerEnd: null,
+        distance: 30,
+        distanceUnit: 'metres',
+        scoringSystem: 'metric',
+        isCompetition: false,
+      ),
+    ];
+    final expectedNewSessionsData = <v4.SessionsData>[
+      v4.SessionsData(
+        id: 1,
+        startTime: startTime,
+        arrowsPerEnd: '6',
+        distance: 30,
+        distanceUnit: 'metres',
+        scoringSystem: 'metric',
+        isCompetition: false,
+      ),
+      v4.SessionsData(
+        id: 2,
+        startTime: startTime,
+        arrowsPerEnd: '',
+        distance: 30,
+        distanceUnit: 'metres',
+        scoringSystem: 'metric',
+        isCompetition: false,
+      ),
+    ];
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.sessions, oldSessionsData);
+      },
+      validateItems: (newDb) async {
+        expect(
+          await newDb.select(newDb.sessions).get(),
+          expectedNewSessionsData,
         );
       },
     );
