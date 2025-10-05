@@ -41,6 +41,18 @@ final standardRounds = [
     ],
   ),
   StandardRound(
+    id: 'frostbite',
+    displayName: 'Frostbite',
+    scoringSystem: ScoringSystems.metric,
+    distances: [
+      StandardRoundDistance(
+        distanceValue: DistanceValue(30, DistanceUnit.metres),
+        arrows: 36,
+        defaultArrowsPerEnd: 3,
+      ),
+    ],
+  ),
+  StandardRound(
     id: 'short_metric_1',
     displayName: 'Short Metric I',
     scoringSystem: ScoringSystems.metric,
