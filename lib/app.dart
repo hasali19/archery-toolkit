@@ -21,6 +21,7 @@ class App extends StatelessWidget {
         seedColor: Colors.green,
         brightness: brightness,
       ),
+      cardTheme: CardThemeData(clipBehavior: Clip.antiAlias),
     );
   }
 }

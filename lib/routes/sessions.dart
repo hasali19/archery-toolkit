@@ -120,65 +120,7 @@ class _SessionsPageState extends State<SessionsPage> {
           }
 
           if (snapshot.hasData) {
-            final SessionsModel(:sessions, :totals, :pbSessions) =
-                snapshot.data!;
-            return ListView(
-              children: [
-                for (final session in sessions)
-                  ListTile(
-                    title: Text(session.roundDetails.displayName),
-                    subtitle: Text(_dateFormat.format(session.startTime)),
-                    trailing: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          totals[session.id].toString(),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        if (pbSessions.contains(session.id))
-                          Text(
-                            "PB",
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return SessionScoringPage(sessionId: session.id);
-                          },
-                        ),
-                      );
-                    },
-                    onLongPress: () {
-                      showModalBottomSheet(
-                        context: context,
-                        clipBehavior: Clip.antiAlias,
-                        builder: (context) {
-                          return ListView(
-                            shrinkWrap: true,
-                            children: [
-                              ListTile(
-                                leading: Icon(Icons.delete),
-                                title: Text('Delete'),
-                                textColor: Colors.red,
-                                iconColor: Colors.red,
-                                onTap: () async {
-                                  Navigator.pop(context);
-                                  await sessionsRepo.sessionsDao.removeSession(
-                                    session.id,
-                                  );
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
-              ],
-            );
+            return _buildData(context, snapshot.requireData);
           }
 
           return Text(snapshot.error.toString());
@@ -189,6 +131,108 @@ class _SessionsPageState extends State<SessionsPage> {
         onPressed: _onCreateNewSession,
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  Widget _buildData(BuildContext context, SessionsModel model) {
+    final padding = MediaQuery.paddingOf(context);
+
+    final SessionsModel(:sessions, :totals, :pbSessions) = model;
+
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      removeBottom: true,
+      removeLeft: true,
+      removeRight: true,
+      child: ListView.separated(
+        padding: padding + EdgeInsets.all(8),
+        itemCount: sessions.length,
+        itemBuilder: (context, index) {
+          final session = sessions[index];
+          return _SessionListItem(
+            session: session,
+            total: totals[session.id] ?? 0,
+            isPersonalBest: pbSessions.contains(session.id),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return SessionScoringPage(sessionId: session.id);
+                  },
+                ),
+              );
+            },
+            onDelete: () async {
+              await sessionsRepo.sessionsDao.removeSession(session.id);
+            },
+          );
+        },
+        separatorBuilder: (context, index) {
+          return Gap(4);
+        },
+      ),
+    );
+  }
+}
+
+class _SessionListItem extends StatelessWidget {
+  final Session session;
+  final int total;
+  final bool isPersonalBest;
+  final void Function() onTap;
+  final void Function() onDelete;
+
+  const _SessionListItem({
+    required this.session,
+    required this.total,
+    required this.isPersonalBest,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(session.roundDetails.displayName),
+        subtitle: Text(_dateFormat.format(session.startTime)),
+        trailing: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              total.toString(),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            if (isPersonalBest)
+              Text("PB", style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+        onTap: onTap,
+        onLongPress: () {
+          showModalBottomSheet(
+            context: context,
+            clipBehavior: Clip.antiAlias,
+            builder: (context) {
+              return ListView(
+                shrinkWrap: true,
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.delete),
+                    title: Text('Delete'),
+                    textColor: Colors.red,
+                    iconColor: Colors.red,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onDelete();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
