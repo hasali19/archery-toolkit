@@ -19,11 +19,13 @@ final class StandardRoundDistance {
   final DistanceValue distanceValue;
   final int arrows;
   final int defaultArrowsPerEnd;
+  final List<int> possibleArrowsPerEnd;
 
   const StandardRoundDistance({
     required this.distanceValue,
     required this.arrows,
     required this.defaultArrowsPerEnd,
+    required this.possibleArrowsPerEnd,
   });
 }
 
@@ -37,6 +39,7 @@ final standardRounds = [
         distanceValue: DistanceValue(20, DistanceUnit.yards),
         arrows: 60,
         defaultArrowsPerEnd: 3,
+        possibleArrowsPerEnd: [3, 6],
       ),
     ],
   ),
@@ -49,6 +52,7 @@ final standardRounds = [
         distanceValue: DistanceValue(30, DistanceUnit.metres),
         arrows: 36,
         defaultArrowsPerEnd: 3,
+        possibleArrowsPerEnd: [3, 6],
       ),
     ],
   ),
@@ -61,11 +65,26 @@ final standardRounds = [
         distanceValue: DistanceValue(50, DistanceUnit.metres),
         arrows: 36,
         defaultArrowsPerEnd: 6,
+        possibleArrowsPerEnd: [3, 6],
       ),
       StandardRoundDistance(
         distanceValue: DistanceValue(30, DistanceUnit.metres),
         arrows: 36,
         defaultArrowsPerEnd: 3,
+        possibleArrowsPerEnd: [3, 6],
+      ),
+    ],
+  ),
+  StandardRound(
+    id: 'worcester',
+    displayName: 'Worcester',
+    scoringSystem: ScoringSystems.worcester,
+    distances: [
+      StandardRoundDistance(
+        distanceValue: DistanceValue(20, DistanceUnit.yards),
+        arrows: 30,
+        defaultArrowsPerEnd: 5,
+        possibleArrowsPerEnd: [5],
       ),
     ],
   ),

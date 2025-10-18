@@ -229,6 +229,7 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
     );
 
     final distanceController = useTextEditingController(text: '20');
+    final standardRound = standardRoundsById[roundId];
 
     return AlertDialog(
       title: Text('New Session'),
@@ -309,16 +310,22 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                   ],
                 ),
               ],
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Arrows per end', style: labelStyle),
-                  Row(
-                    spacing: 8,
-                    children: [_buildArrowsChoice(3), _buildArrowsChoice(6)],
-                  ),
-                ],
-              ),
+              if (standardRound != null &&
+                  standardRound.distances[0].possibleArrowsPerEnd.length > 1)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Arrows per end', style: labelStyle),
+                    Row(
+                      spacing: 8,
+                      children: [
+                        for (final v
+                            in standardRound.distances[0].possibleArrowsPerEnd)
+                          _buildArrowsChoice(v),
+                      ],
+                    ),
+                  ],
+                ),
               if (roundId != null)
                 Row(
                   spacing: 8,

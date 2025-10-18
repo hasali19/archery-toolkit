@@ -22,27 +22,23 @@ class ScoringSystems {
       Score(id: 12, label: 'M', value: 0, color: Colors.green),
     ],
   );
+
+  static final worcester = ScoringSystem(
+    id: 'worcester',
+    displayName: 'Worcester',
+    scores: [
+      Score(id: 1, label: '5', value: 5, color: Colors.white),
+      Score(id: 2, label: '4', value: 4, color: Colors.black),
+      Score(id: 3, label: '3', value: 3, color: Colors.black),
+      Score(id: 4, label: '2', value: 2, color: Colors.black),
+      Score(id: 5, label: '1', value: 1, color: Colors.black),
+      Score(id: 6, label: 'M', value: 0, color: Colors.black),
+    ],
+  );
 }
 
 final Map<String, ScoringSystem> scoringSystems = {
-  'metric': ScoringSystem(
-    id: 'metric',
-    displayName: 'Metric (10 Zone)',
-    scores: [
-      Score(id: 1, label: 'X', value: 10, color: Colors.yellow),
-      Score(id: 2, label: '10', value: 10, color: Colors.yellow),
-      Score(id: 3, label: '9', value: 9, color: Colors.yellow),
-      Score(id: 4, label: '8', value: 8, color: Colors.red),
-      Score(id: 5, label: '7', value: 7, color: Colors.red),
-      Score(id: 6, label: '6', value: 6, color: Colors.blue),
-      Score(id: 7, label: '5', value: 5, color: Colors.blue),
-      Score(id: 8, label: '4', value: 4, color: Colors.black),
-      Score(id: 9, label: '3', value: 3, color: Colors.black),
-      Score(id: 10, label: '2', value: 2, color: Colors.white),
-      Score(id: 11, label: '1', value: 1, color: Colors.white),
-      Score(id: 12, label: 'M', value: 0, color: Colors.green),
-    ],
-  ),
+  'metric': ScoringSystems.metric,
   'imperial': ScoringSystem(
     id: 'imperial',
     displayName: 'Imperial (5 Zone)',
@@ -55,6 +51,7 @@ final Map<String, ScoringSystem> scoringSystems = {
       Score(id: 6, label: 'M', value: 0, color: Colors.green),
     ],
   ),
+  'worcester': ScoringSystems.worcester,
 };
 
 final class ScoringSystem {
