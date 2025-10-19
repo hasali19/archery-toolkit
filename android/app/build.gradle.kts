@@ -52,12 +52,12 @@ android {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Archery Toolkit (d)")
+            resValue("string", "app_name", "Archery (d)")
         }
 
         release {
             signingConfig = signingConfigs.getByName("release")
-            resValue("string", "app_name", "Archery Toolkit")
+            resValue("string", "app_name", "Archery")
         }
     }
 }
