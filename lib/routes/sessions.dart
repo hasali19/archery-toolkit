@@ -354,7 +354,7 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                   ],
                 ),
               ],
-              if (standardRound != null &&
+              if (standardRound == null ||
                   standardRound.distances[0].possibleArrowsPerEnd.length > 1)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +364,10 @@ class _NewSessionDialogState extends State<_NewSessionDialog> {
                       spacing: 8,
                       children: [
                         for (final v
-                            in standardRound.distances[0].possibleArrowsPerEnd)
+                            in standardRound
+                                    ?.distances[0]
+                                    .possibleArrowsPerEnd ??
+                                [3, 6])
                           _buildArrowsChoice(v),
                       ],
                     ),
