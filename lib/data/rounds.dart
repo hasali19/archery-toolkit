@@ -86,6 +86,12 @@ final standardRounds = [
         defaultArrowsPerEnd: 5,
         possibleArrowsPerEnd: [5],
       ),
+      StandardRoundDistance(
+        distanceValue: DistanceValue(20, DistanceUnit.yards),
+        arrows: 30,
+        defaultArrowsPerEnd: 5,
+        possibleArrowsPerEnd: [5],
+      ),
     ],
   ),
 ];
