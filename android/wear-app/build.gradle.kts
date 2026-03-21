@@ -54,6 +54,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation("androidx.core:core-splashscreen:1.2.0")
     implementation("com.google.android.horologist:horologist-compose-layout:0.8.3-alpha")
+    implementation("com.google.android.horologist:horologist-datalayer-grpc:0.8.3-alpha")
+    implementation(project(":proto"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")

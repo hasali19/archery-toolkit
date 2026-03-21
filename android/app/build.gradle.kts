@@ -64,3 +64,10 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("com.google.android.gms:play-services-wearable:18.0.0")
+    implementation("com.google.android.horologist:horologist-datalayer-grpc:0.8.3-alpha")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+    implementation(project(":proto"))
+}

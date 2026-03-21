@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package archerytoolkit;
+
+option java_package = "dev.hasali.archerytoolkit.proto";
+option java_multiple_files = true;
+
+message StartSessionRequest {
+  int64 session_id = 1;
+}
+
+message StartSessionResponse {}
+
+service SessionService {
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
+}

@@ -5,6 +5,7 @@
 
 package dev.hasali.archerytoolkit.presentation
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,8 +29,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,16 +68,24 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
+    private var sessionId by mutableStateOf<Long?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sessionId = intent.getLongExtra("sessionId", -1).takeIf { it >= 0 }
         setContent {
-            WearApp()
+            WearApp(sessionId = sessionId)
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        sessionId = intent.getLongExtra("sessionId", -1).takeIf { it >= 0 }
     }
 }
 
 @Composable
-fun WearApp() {
+fun WearApp(sessionId: Long? = null) {
     AndroidTheme {
         AppScaffold {
 
