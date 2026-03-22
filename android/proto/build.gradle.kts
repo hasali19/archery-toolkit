@@ -1,5 +1,3 @@
-import com.google.protobuf.gradle.id
-
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
@@ -28,25 +26,36 @@ protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:3.25.3"
     }
+
     plugins {
-        id("grpc") {
+        create("javalite") {
+            artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0"
+        }
+        create("grpc") {
             artifact = "io.grpc:protoc-gen-grpc-java:1.64.0"
         }
-        id("grpckt") {
+        create("grpckt") {
             artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.1:jdk8@jar"
         }
     }
+
     generateProtoTasks {
         all().forEach { task ->
-            task.plugins {
-                id("grpc")
-                id("grpckt")
-            }
             task.builtins {
-                id("java") {
+                create("java") {
                     option("lite")
                 }
-                id("kotlin")
+                create("kotlin") {
+                    option("lite")
+                }
+            }
+            task.plugins {
+                create("grpc") {
+                    option("lite")
+                }
+                create("grpckt") {
+                    option("lite")
+                }
             }
         }
     }
