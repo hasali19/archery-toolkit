@@ -1,8 +1,9 @@
-package dev.hasali.archerytoolkit.presentation
+package dev.hasali.archerytoolkit.service
 
 import android.content.Intent
 import com.google.android.horologist.data.WearDataLayerRegistry
 import com.google.android.horologist.datalayer.grpc.server.BaseGrpcDataService
+import dev.hasali.archerytoolkit.presentation.MainActivity
 import dev.hasali.archerytoolkit.proto.SessionServiceGrpcKt
 import dev.hasali.archerytoolkit.proto.StartSessionResponse
 

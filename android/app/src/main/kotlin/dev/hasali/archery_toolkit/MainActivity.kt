@@ -21,7 +21,8 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "archerytoolkit/wear")
             .setMethodCallHandler { call, result ->
                 if (call.method == "startSession") {
-                    val sessionId = call.argument<Long>("sessionId") ?: 0L
+                    val sessionId = call.argument<Long>("sessionId")
+                        ?: return@setMethodCallHandler result.error("INVALID_ARGUMENT", "sessionId is required", null)
                     lifecycleScope.launch {
                         try {
                             val nodes = Wearable.getNodeClient(this@MainActivity)
