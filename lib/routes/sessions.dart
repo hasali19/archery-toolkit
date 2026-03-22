@@ -6,11 +6,14 @@ import 'package:archery_toolkit/db/sessions.dart';
 import 'package:archery_toolkit/routes/session_scoring.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
+const _wearChannel = MethodChannel('archerytoolkit/wear');
 
 part 'sessions.freezed.dart';
 
@@ -95,6 +98,8 @@ class _SessionsPageState extends State<SessionsPage> {
       };
 
       final session = await sessionsRepo.sessionsDao.insertSession(newSession);
+
+      await _wearChannel.invokeMethod('startSession', {'sessionId': session.id});
 
       if (mounted) {
         await Navigator.of(context).push(
