@@ -13,9 +13,9 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-const _wearChannel = MethodChannel('archerytoolkit/wear');
-
 part 'sessions.freezed.dart';
+
+const _wearChannel = MethodChannel('archerytoolkit/wear');
 
 final DateFormat _dateFormat = DateFormat('dd MMM y');
 
