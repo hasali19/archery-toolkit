@@ -41,7 +41,7 @@ fun ScoreKeyboard(
                         rowScores.forEach { score ->
                             Button(
                                 onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    haptic.performHapticFeedback(HapticFeedbackType.KeyboardTap)
                                     onScorePressed(score)
                                 },
                                 modifier = Modifier.width(buttonWidth).padding(horizontal = 4.dp),
