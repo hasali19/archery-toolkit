@@ -35,7 +35,7 @@ fun ScoreKeyboard(
         val buttonWidth = maxWidth / columns
 
         Row(verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                 scoringSystem.scores.chunked(columns - 1).forEach { rowScores ->
                     Row {
                         rowScores.forEach { score ->
