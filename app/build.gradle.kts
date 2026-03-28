@@ -76,8 +76,9 @@ android {
 sqldelight {
     databases {
         create("AppDatabase") {
-            packageName.set("dev.hasali.archery.db")
-            schemaOutputDirectory.set(file("src/main/sqldelight"))
+            packageName = "dev.hasali.archery.db"
+            schemaOutputDirectory = file("src/main/sqldelight")
+            verifyMigrations = true
         }
     }
 }
