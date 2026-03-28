@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:archery_toolkit/core/models.dart';
 import 'package:archery_toolkit/core/sessions_repo.dart';
 import 'package:archery_toolkit/data/rounds.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 part 'sessions.freezed.dart';
@@ -71,6 +74,58 @@ class _SessionsPageState extends State<SessionsPage> {
     });
   }
 
+  Future<void> _exportDatabase() async {
+    try {
+      // drift_flutter stores the DB in applicationDocumentsDirectory by default.
+      // Try that first, then applicationSupportDirectory as a fallback.
+      File? dbFile;
+      for (final dir in [
+        await getApplicationDocumentsDirectory(),
+        await getApplicationSupportDirectory(),
+      ]) {
+        final candidate = File('${dir.path}/archery_toolkit');
+        if (await candidate.exists()) {
+          dbFile = candidate;
+          break;
+        }
+      }
+
+      if (dbFile == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Database file not found')),
+          );
+        }
+        return;
+      }
+
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Downloads folder not available')),
+          );
+        }
+        return;
+      }
+
+      final dest = File('${downloadsDir.path}/archery_toolkit.db');
+      await dbFile.copy(dest.path);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Database exported to ${dest.path}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    }
+  }
+
   void _onCreateNewSession() async {
     final _NewSessionModel? model = await showDialog(
       context: context,
@@ -111,7 +166,24 @@ class _SessionsPageState extends State<SessionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sessions')),
+      appBar: AppBar(
+        title: const Text('Sessions'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'export_db') {
+                _exportDatabase();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'export_db',
+                child: Text('Export DB'),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: StreamBuilder(
         stream: sessionsStream,
         builder: (context, snapshot) {
