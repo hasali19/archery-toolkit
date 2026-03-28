@@ -3,7 +3,7 @@
  * most up to date changes to the libraries and their usages.
  */
 
-package dev.hasali.archerytoolkit.presentation
+package dev.hasali.archery.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -53,7 +53,7 @@ import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.LocalContentColor
 import androidx.wear.compose.material3.touchTargetAwareSize
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import dev.hasali.archerytoolkit.presentation.theme.AndroidTheme
+import dev.hasali.archery.presentation.theme.AndroidTheme
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos

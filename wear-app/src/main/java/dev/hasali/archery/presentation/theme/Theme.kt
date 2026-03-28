@@ -1,4 +1,4 @@
-package dev.hasali.archerytoolkit.presentation.theme
+package dev.hasali.archery.presentation.theme
 
 import androidx.compose.runtime.Composable
 import androidx.wear.compose.material3.MaterialTheme

@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Archery"
 include(":app")
- 
+include(":wear-app")
