@@ -83,11 +83,14 @@ class _SessionsPageState extends State<SessionsPage> {
         await getApplicationDocumentsDirectory(),
         await getApplicationSupportDirectory(),
       ]) {
-        final candidate = File('${dir.path}/archery_toolkit');
-        if (await candidate.exists()) {
-          dbFile = candidate;
-          break;
+        for (final name in ['archery_toolkit.sqlite', 'archery_toolkit']) {
+          final candidate = File('${dir.path}/$name');
+          if (await candidate.exists()) {
+            dbFile = candidate;
+            break;
+          }
         }
+        if (dbFile != null) break;
       }
 
       if (dbFile == null) {
