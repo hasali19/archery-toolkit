@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -21,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -43,6 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,6 +61,28 @@ import java.util.Date
 import java.util.Locale
 
 private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+
+@Composable
+private fun ChoiceChip(selected: Boolean, onClick: () -> Unit, label: @Composable () -> Unit) {
+    val leadingIcon = if (selected) {
+        @Composable {
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = null,
+                modifier = Modifier.size(FilterChipDefaults.IconSize)
+            )
+        }
+    } else {
+        null
+    }
+
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = label,
+        leadingIcon = leadingIcon,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -300,7 +325,7 @@ private fun NewSessionDialog(
                     // Distance unit chips
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DistanceUnit.entries.forEach { unit ->
-                            FilterChip(
+                            ChoiceChip(
                                 selected = selectedDistanceUnit == unit,
                                 onClick = { selectedDistanceUnit = unit },
                                 label = { Text(unit.name) },
@@ -321,7 +346,7 @@ private fun NewSessionDialog(
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             possibleArrowsPerEnd.forEach { value ->
-                                FilterChip(
+                                ChoiceChip(
                                     selected = selectedArrowsPerEnd == value,
                                     onClick = { selectedArrowsPerEnd = value },
                                     label = { Text(value.toString()) },
@@ -334,12 +359,12 @@ private fun NewSessionDialog(
                 // Practice / Competition toggle (standard rounds only)
                 if (selectedRoundId != null) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
+                        ChoiceChip(
                             selected = !isCompetition,
                             onClick = { isCompetition = false },
                             label = { Text("Practice") },
                         )
-                        FilterChip(
+                        ChoiceChip(
                             selected = isCompetition,
                             onClick = { isCompetition = true },
                             label = { Text("Competition") },
