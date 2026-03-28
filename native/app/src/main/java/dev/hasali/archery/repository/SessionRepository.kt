@@ -6,7 +6,6 @@ import dev.hasali.archery.data.DistanceUnit
 import dev.hasali.archery.data.DistanceValue
 import dev.hasali.archery.data.RoundDetails
 import dev.hasali.archery.data.RoundDistance
-import dev.hasali.archery.data.Score
 import dev.hasali.archery.data.ScoringSystems
 import dev.hasali.archery.data.Session
 import dev.hasali.archery.data.standardRoundsById
@@ -17,6 +16,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 sealed class NewSessionParams {
     data class Round(
@@ -53,24 +54,27 @@ class SessionRepository(private val database: AppDatabase) {
 
     suspend fun createSession(params: NewSessionParams): Int = withContext(Dispatchers.IO) {
         database.transactionWithResult {
+            val now = Clock.System.now()
             when (params) {
-                is NewSessionParams.Round -> database.sessionQueries.insert(
-                    startTime = System.currentTimeMillis(),
-                    roundId = params.roundId,
-                    arrowsPerEnd = params.arrowsPerEnd.toString(),
-                    distance = null,
-                    distanceUnit = null,
-                    scoringSystem = null,
-                    isCompetition = if (params.isCompetition) 1L else 0L,
-                )
+                is NewSessionParams.Round -> {
+                    database.sessionQueries.insert(
+                        startTime = now,
+                        roundId = params.roundId,
+                        arrowsPerEnd = params.arrowsPerEnd.toString(),
+                        distance = null,
+                        distanceUnit = null,
+                        scoringSystem = null,
+                        isCompetition = params.isCompetition,
+                    )
+                }
                 is NewSessionParams.FreePractice -> database.sessionQueries.insert(
-                    startTime = System.currentTimeMillis(),
+                    startTime = now,
                     roundId = null,
                     arrowsPerEnd = params.arrowsPerEnd.toString(),
                     distance = params.distance.toLong(),
                     distanceUnit = params.distanceUnit.name,
                     scoringSystem = params.scoringSystem,
-                    isCompetition = 0L,
+                    isCompetition = false,
                 )
             }
             database.sessionQueries.lastInsertRowId().executeAsOne().toInt()
@@ -97,7 +101,7 @@ class SessionRepository(private val database: AppDatabase) {
         )
     }
 
-    suspend fun updateStartTime(sessionId: Int, epochMillis: Long) = withContext(Dispatchers.IO) {
+    suspend fun updateStartTime(sessionId: Int, epochMillis: Instant) = withContext(Dispatchers.IO) {
         database.sessionQueries.updateStartTime(
             startTime = epochMillis,
             id = sessionId.toLong(),
@@ -142,8 +146,8 @@ class SessionRepository(private val database: AppDatabase) {
 
             RoundDetails(
                 id = null,
-                displayName = "Free Practice \u2022 ${distanceValue.value} ${distanceValue.unit.name}",
-                scoringSystem = ScoringSystems.all[entity.scoringSystem] ?: ScoringSystems.metric,
+                displayName = "Free Practice • ${distanceValue.value} ${distanceValue.unit.name}",
+                scoringSystem = ScoringSystems.byId[entity.scoringSystem] ?: ScoringSystems.metric,
                 distances = listOf(
                     RoundDistance(
                         distanceValue = distanceValue,
@@ -162,7 +166,7 @@ class SessionRepository(private val database: AppDatabase) {
             startTime = entity.startTime,
             roundDetails = roundDetails,
             scores = arrows.map { scoringSystem.get(it.scoreId.toInt()) },
-            isCompetition = entity.isCompetition != 0L,
+            isCompetition = entity.isCompetition,
         )
     }
 }

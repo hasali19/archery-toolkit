@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Instant
 
 data class ScoringUiState(
     val session: Session? = null,
@@ -53,12 +54,12 @@ class SessionScoringViewModel(
         }
     }
 
-    fun updateStartTime(epochMillis: Long) {
+    fun updateStartTime(startTime: Instant) {
         _uiState.update { state ->
-            state.copy(session = state.session?.copy(startTime = epochMillis))
+            state.copy(session = state.session?.copy(startTime = startTime))
         }
         viewModelScope.launch {
-            repo.updateStartTime(sessionId, epochMillis)
+            repo.updateStartTime(sessionId, startTime)
         }
     }
 

@@ -27,7 +27,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -46,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,11 +56,20 @@ import dev.hasali.archery.data.standardRounds
 import dev.hasali.archery.data.standardRoundsById
 import dev.hasali.archery.repository.NewSessionParams
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
 
-private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+private val dateFormat = LocalDate.Format {
+    day()
+    char(' ')
+    monthName(MonthNames.ENGLISH_ABBREVIATED)
+    char(' ')
+    year()
+}
 
 @Composable
 private fun ChoiceChip(selected: Boolean, onClick: () -> Unit, label: @Composable () -> Unit) {
@@ -183,7 +192,9 @@ private fun SessionListItem(
         ListItem(
             headlineContent = { Text(session.roundDetails.displayName) },
             supportingContent = {
-                Text(dateFormat.format(Date(session.startTime)))
+                val localDateTime =
+                    session.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
+                Text(localDateTime.date.format(dateFormat))
             },
             trailingContent = {
                 Column(horizontalAlignment = Alignment.End) {
@@ -246,7 +257,7 @@ private fun NewSessionDialog(
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = roundDropdownExpanded)
                         },
                         modifier = Modifier
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                             .fillMaxWidth(),
                     )
                     ExposedDropdownMenu(
@@ -281,7 +292,7 @@ private fun NewSessionDialog(
                         onExpandedChange = { scoringDropdownExpanded = it },
                     ) {
                         OutlinedTextField(
-                            value = ScoringSystems.all[selectedScoringSystem]?.displayName ?: "",
+                            value = ScoringSystems.byId[selectedScoringSystem]?.displayName ?: "",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Scoring") },
@@ -289,14 +300,14 @@ private fun NewSessionDialog(
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = scoringDropdownExpanded)
                             },
                             modifier = Modifier
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth(),
                         )
                         ExposedDropdownMenu(
                             expanded = scoringDropdownExpanded,
                             onDismissRequest = { scoringDropdownExpanded = false },
                         ) {
-                            ScoringSystems.all.values.forEach { system ->
+                            ScoringSystems.byId.values.forEach { system ->
                                 DropdownMenuItem(
                                     text = { Text(system.displayName) },
                                     onClick = {

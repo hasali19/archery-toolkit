@@ -1,12 +1,15 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
 CREATE TABLE sessions (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    startTime INTEGER NOT NULL,
+    startTime INTEGER AS Instant NOT NULL,
     roundId TEXT,
     arrowsPerEnd TEXT NOT NULL DEFAULT '',
     distance INTEGER,
     distanceUnit TEXT,
     scoringSystem TEXT,
-    isCompetition INTEGER NOT NULL DEFAULT 0
+    isCompetition INTEGER AS Boolean NOT NULL DEFAULT 0
 );
 
 selectAll:

@@ -1,12 +1,5 @@
 package dev.hasali.archery.data
 
-data class StandardRoundDistance(
-    val distanceValue: DistanceValue,
-    val arrows: Int,
-    val defaultArrowsPerEnd: Int,
-    val possibleArrowsPerEnd: List<Int>,
-)
-
 data class StandardRound(
     val id: String,
     val displayName: String,
@@ -14,7 +7,14 @@ data class StandardRound(
     val distances: List<StandardRoundDistance>,
 )
 
-val standardRounds: List<StandardRound> = listOf(
+data class StandardRoundDistance(
+    val distanceValue: DistanceValue,
+    val arrows: Int,
+    val defaultArrowsPerEnd: Int,
+    val possibleArrowsPerEnd: List<Int>,
+)
+
+val standardRounds = listOf(
     StandardRound(
         id = "portsmouth",
         displayName = "Portsmouth",
@@ -81,4 +81,4 @@ val standardRounds: List<StandardRound> = listOf(
     ),
 )
 
-val standardRoundsById: Map<String, StandardRound> = standardRounds.associateBy { it.id }
+val standardRoundsById = standardRounds.associateBy { it.id }

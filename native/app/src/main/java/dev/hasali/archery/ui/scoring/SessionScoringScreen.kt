@@ -46,8 +46,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hasali.archery.data.RoundDistance
 import dev.hasali.archery.data.Score
 import dev.hasali.archery.ui.components.ScoreKeyboard
+import kotlin.time.Instant
 
-// Sealed items for the flat score sheet list
+// Sealed items for the flat scoresheet list
 private sealed interface ScoreSheetItem {
     data class DistanceHeader(val label: String, val total: Int) : ScoreSheetItem
     data class EndRow(val endNumber: Int, val scores: List<Score>) : ScoreSheetItem
@@ -148,8 +149,8 @@ fun SessionScoringScreen(
             val layoutInfo = listState.layoutInfo
             val targetItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetIdx }
             val isFullyVisible = targetItem != null &&
-                targetItem.offset >= layoutInfo.viewportStartOffset &&
-                targetItem.offset + targetItem.size <= layoutInfo.viewportEndOffset
+                    targetItem.offset >= layoutInfo.viewportStartOffset &&
+                    targetItem.offset + targetItem.size <= layoutInfo.viewportEndOffset
             if (!isFullyVisible) {
                 listState.animateScrollToItem(targetIdx)
             }
@@ -158,13 +159,15 @@ fun SessionScoringScreen(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = session?.startTime,
+            initialSelectedDateMillis = session?.startTime?.toEpochMilliseconds(),
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { viewModel.updateStartTime(it) }
+                    datePickerState.selectedDateMillis?.let {
+                        viewModel.updateStartTime(Instant.fromEpochMilliseconds(it))
+                    }
                     showDatePicker = false
                 }) { Text("OK") }
             },
