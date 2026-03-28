@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
@@ -43,7 +44,7 @@ fun ScoreKeyboard(
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     onScorePressed(score)
                                 },
-                                modifier = Modifier.width(buttonWidth),
+                                modifier = Modifier.width(buttonWidth).padding(horizontal = 4.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = score.color,
                                     contentColor = score.foregroundColor,
@@ -61,7 +62,7 @@ fun ScoreKeyboard(
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onBackspacePressed()
                 },
-                modifier = Modifier.width(buttonWidth),
+                modifier = Modifier.width(buttonWidth).padding(horizontal = 4.dp),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
