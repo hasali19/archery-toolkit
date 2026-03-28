@@ -145,7 +145,14 @@ fun SessionScoringScreen(
                 distances = distances,
                 scoreSheetItems = scoreSheetItems,
             )
-            listState.animateScrollToItem(targetIdx)
+            val layoutInfo = listState.layoutInfo
+            val targetItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetIdx }
+            val isFullyVisible = targetItem != null &&
+                targetItem.offset >= layoutInfo.viewportStartOffset &&
+                targetItem.offset + targetItem.size <= layoutInfo.viewportEndOffset
+            if (!isFullyVisible) {
+                listState.animateScrollToItem(targetIdx)
+            }
         }
     }
 
