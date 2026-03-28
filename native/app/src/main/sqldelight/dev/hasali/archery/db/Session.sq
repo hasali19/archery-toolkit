@@ -1,0 +1,29 @@
+CREATE TABLE sessions (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    startTime INTEGER NOT NULL,
+    roundId TEXT,
+    arrowsPerEnd TEXT NOT NULL DEFAULT '',
+    distance INTEGER,
+    distanceUnit TEXT,
+    scoringSystem TEXT,
+    isCompetition INTEGER NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM sessions ORDER BY startTime DESC;
+
+selectById:
+SELECT * FROM sessions WHERE id = :id;
+
+insert:
+INSERT INTO sessions (startTime, roundId, arrowsPerEnd, distance, distanceUnit, scoringSystem, isCompetition)
+VALUES (:startTime, :roundId, :arrowsPerEnd, :distance, :distanceUnit, :scoringSystem, :isCompetition);
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+deleteById:
+DELETE FROM sessions WHERE id = :id;
+
+updateStartTime:
+UPDATE sessions SET startTime = :startTime WHERE id = :id;

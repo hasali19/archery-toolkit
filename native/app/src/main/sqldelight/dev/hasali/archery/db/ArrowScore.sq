@@ -1,0 +1,20 @@
+CREATE TABLE arrow_scores (
+    sessionId INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    "index" INTEGER NOT NULL,
+    scoreId INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    PRIMARY KEY (sessionId, "index")
+) WITHOUT ROWID;
+
+selectAllBySessionId:
+SELECT * FROM arrow_scores WHERE sessionId = :sessionId ORDER BY "index";
+
+selectAll:
+SELECT * FROM arrow_scores ORDER BY sessionId, "index";
+
+insert:
+INSERT INTO arrow_scores (sessionId, "index", scoreId, timestamp)
+VALUES (:sessionId, :index, :scoreId, :timestamp);
+
+deleteByIndex:
+DELETE FROM arrow_scores WHERE sessionId = :sessionId AND "index" = :index;
