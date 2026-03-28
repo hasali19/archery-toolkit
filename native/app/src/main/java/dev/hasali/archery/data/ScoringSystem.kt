@@ -26,7 +26,7 @@ private val yellow = Color(0xFFFFEB3B)
 private val red = Color(0xFFF44336)
 private val blue = Color(0xFF2196F3)
 private val green = Color(0xFF4CAF50)
-private val black = Color.Black
+private val black = Color(0xFF080808)
 private val white = Color.White
 
 object ScoringSystems {
