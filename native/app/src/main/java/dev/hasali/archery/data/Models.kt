@@ -1,6 +1,6 @@
 package dev.hasali.archery.data
 
-enum class DistanceUnit { metres, yards }
+enum class DistanceUnit { Metres, Yards }
 
 data class DistanceValue(val value: Int, val unit: DistanceUnit)
 

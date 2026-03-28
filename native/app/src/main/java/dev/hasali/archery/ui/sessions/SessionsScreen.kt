@@ -217,7 +217,7 @@ private fun NewSessionDialog(
     var selectedRoundId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedScoringSystem by rememberSaveable { mutableStateOf("metric") }
     var distanceText by rememberSaveable { mutableStateOf("20") }
-    var selectedDistanceUnit by rememberSaveable { mutableStateOf(DistanceUnit.yards) }
+    var selectedDistanceUnit by rememberSaveable { mutableStateOf(DistanceUnit.Yards) }
     var selectedArrowsPerEnd by rememberSaveable { mutableIntStateOf(3) }
     var isCompetition by rememberSaveable { mutableStateOf(false) }
     var distanceError by rememberSaveable { mutableStateOf(false) }

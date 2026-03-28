@@ -21,7 +21,7 @@ val standardRounds: List<StandardRound> = listOf(
         scoringSystem = ScoringSystems.metric,
         distances = listOf(
             StandardRoundDistance(
-                distanceValue = DistanceValue(20, DistanceUnit.yards),
+                distanceValue = DistanceValue(20, DistanceUnit.Yards),
                 arrows = 60,
                 defaultArrowsPerEnd = 3,
                 possibleArrowsPerEnd = listOf(3, 6),
@@ -34,7 +34,7 @@ val standardRounds: List<StandardRound> = listOf(
         scoringSystem = ScoringSystems.metric,
         distances = listOf(
             StandardRoundDistance(
-                distanceValue = DistanceValue(30, DistanceUnit.metres),
+                distanceValue = DistanceValue(30, DistanceUnit.Metres),
                 arrows = 36,
                 defaultArrowsPerEnd = 3,
                 possibleArrowsPerEnd = listOf(3, 6),
@@ -47,13 +47,13 @@ val standardRounds: List<StandardRound> = listOf(
         scoringSystem = ScoringSystems.metric,
         distances = listOf(
             StandardRoundDistance(
-                distanceValue = DistanceValue(50, DistanceUnit.metres),
+                distanceValue = DistanceValue(50, DistanceUnit.Metres),
                 arrows = 36,
                 defaultArrowsPerEnd = 6,
                 possibleArrowsPerEnd = listOf(3, 6),
             ),
             StandardRoundDistance(
-                distanceValue = DistanceValue(30, DistanceUnit.metres),
+                distanceValue = DistanceValue(30, DistanceUnit.Metres),
                 arrows = 36,
                 defaultArrowsPerEnd = 3,
                 possibleArrowsPerEnd = listOf(3, 6),
@@ -66,13 +66,13 @@ val standardRounds: List<StandardRound> = listOf(
         scoringSystem = ScoringSystems.worcester,
         distances = listOf(
             StandardRoundDistance(
-                distanceValue = DistanceValue(20, DistanceUnit.yards),
+                distanceValue = DistanceValue(20, DistanceUnit.Yards),
                 arrows = 30,
                 defaultArrowsPerEnd = 5,
                 possibleArrowsPerEnd = listOf(5),
             ),
             StandardRoundDistance(
-                distanceValue = DistanceValue(20, DistanceUnit.yards),
+                distanceValue = DistanceValue(20, DistanceUnit.Yards),
                 arrows = 30,
                 defaultArrowsPerEnd = 5,
                 possibleArrowsPerEnd = listOf(5),
