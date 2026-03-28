@@ -13,7 +13,7 @@ class ArcheryApplication : Application() {
         val driver = AndroidSqliteDriver(
             schema = AppDatabase.Schema,
             context = this,
-            name = "archery_toolkit",
+            name = "archery",
             callback = object : AndroidSqliteDriver.Callback(AppDatabase.Schema) {
                 override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                     db.execSQL("PRAGMA foreign_keys = ON")
