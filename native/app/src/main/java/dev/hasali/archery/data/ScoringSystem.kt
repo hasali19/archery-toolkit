@@ -72,10 +72,10 @@ object ScoringSystems {
             Score(id = 6, label = "M", value = 0, color = green),
         ),
     )
-}
 
-val scoringSystems: Map<String, ScoringSystem> = mapOf(
-    "metric" to ScoringSystems.metric,
-    "imperial" to ScoringSystems.imperial,
-    "worcester" to ScoringSystems.worcester,
-)
+    val all = mapOf(
+        "metric" to metric,
+        "imperial" to imperial,
+        "worcester" to worcester,
+    )
+}

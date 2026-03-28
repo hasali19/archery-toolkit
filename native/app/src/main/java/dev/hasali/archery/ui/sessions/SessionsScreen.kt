@@ -47,8 +47,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hasali.archery.data.DistanceUnit
+import dev.hasali.archery.data.ScoringSystems
 import dev.hasali.archery.data.Session
-import dev.hasali.archery.data.scoringSystems
 import dev.hasali.archery.data.standardRounds
 import dev.hasali.archery.data.standardRoundsById
 import dev.hasali.archery.repository.NewSessionParams
@@ -256,7 +256,7 @@ private fun NewSessionDialog(
                         onExpandedChange = { scoringDropdownExpanded = it },
                     ) {
                         OutlinedTextField(
-                            value = scoringSystems[selectedScoringSystem]?.displayName ?: "",
+                            value = ScoringSystems.all[selectedScoringSystem]?.displayName ?: "",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Scoring") },
@@ -271,7 +271,7 @@ private fun NewSessionDialog(
                             expanded = scoringDropdownExpanded,
                             onDismissRequest = { scoringDropdownExpanded = false },
                         ) {
-                            scoringSystems.values.forEach { system ->
+                            ScoringSystems.all.values.forEach { system ->
                                 DropdownMenuItem(
                                     text = { Text(system.displayName) },
                                     onClick = {

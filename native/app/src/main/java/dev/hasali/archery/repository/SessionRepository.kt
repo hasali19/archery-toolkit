@@ -7,8 +7,8 @@ import dev.hasali.archery.data.DistanceValue
 import dev.hasali.archery.data.RoundDetails
 import dev.hasali.archery.data.RoundDistance
 import dev.hasali.archery.data.Score
+import dev.hasali.archery.data.ScoringSystems
 import dev.hasali.archery.data.Session
-import dev.hasali.archery.data.scoringSystems
 import dev.hasali.archery.data.standardRoundsById
 import dev.hasali.archery.db.AppDatabase
 import dev.hasali.archery.db.Arrow_scores
@@ -143,7 +143,7 @@ class SessionRepository(private val database: AppDatabase) {
             RoundDetails(
                 id = null,
                 displayName = "Free Practice \u2022 ${distanceValue.value} ${distanceValue.unit.name}",
-                scoringSystem = scoringSystems[entity.scoringSystem] ?: scoringSystems["metric"]!!,
+                scoringSystem = ScoringSystems.all[entity.scoringSystem] ?: ScoringSystems.metric,
                 distances = listOf(
                     RoundDistance(
                         distanceValue = distanceValue,

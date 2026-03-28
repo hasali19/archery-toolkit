@@ -17,4 +17,4 @@ INSERT INTO arrow_scores (sessionId, "index", scoreId, timestamp)
 VALUES (:sessionId, :index, :scoreId, :timestamp);
 
 deleteByIndex:
-DELETE FROM arrow_scores WHERE sessionId = :sessionId AND "index" = :index;
+DELETE FROM arrow_scores WHERE sessionId = :sessionId AND arrow_scores."index" = :index;
