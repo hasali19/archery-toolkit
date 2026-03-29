@@ -37,4 +37,9 @@ class ArcheryApplication : Application() {
     val sessionRepository: SessionRepository by lazy {
         SessionRepository(database)
     }
+
+    override fun onCreate() {
+        super.onCreate()
+        NotificationChannels.createAll(this)
+    }
 }

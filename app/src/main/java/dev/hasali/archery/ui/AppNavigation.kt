@@ -1,12 +1,17 @@
 package dev.hasali.archery.ui
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dev.hasali.archery.ActiveSessionService
 import dev.hasali.archery.ArcheryApplication
 import dev.hasali.archery.ui.scoring.SessionScoringScreen
 import dev.hasali.archery.ui.scoring.SessionScoringViewModelFactory
@@ -42,6 +47,17 @@ fun AppNavigation(app: ArcheryApplication) {
             val vm = viewModel<dev.hasali.archery.ui.scoring.SessionScoringViewModel>(
                 factory = SessionScoringViewModelFactory(sessionId, app.sessionRepository),
             )
+
+            val context = LocalContext.current
+            DisposableEffect(Unit) {
+                val intent = Intent(context, ActiveSessionService::class.java)
+                intent.putExtra("sessionId", sessionId)
+                ContextCompat.startForegroundService(context, intent)
+                onDispose {
+                    context.stopService(intent)
+                }
+            }
+
             SessionScoringScreen(
                 viewModel = vm,
                 onNavigateBack = { navController.popBackStack() },

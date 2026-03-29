@@ -15,6 +15,7 @@ import dev.hasali.archery.db.Sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -48,8 +49,17 @@ class SessionRepository(private val database: AppDatabase) {
 
     suspend fun getSession(sessionId: Int): Session = withContext(Dispatchers.IO) {
         val entity = database.sessionQueries.selectById(sessionId.toLong()).executeAsOne()
-        val arrows = database.arrowScoreQueries.selectAllBySessionId(sessionId.toLong()).executeAsList()
+        val arrows =
+            database.arrowScoreQueries.selectAllBySessionId(sessionId.toLong()).executeAsList()
         mapToSession(entity, arrows)
+    }
+
+    fun watchSession(sessionId: Int): Flow<Session> = combine(
+        database.sessionQueries.selectById(sessionId.toLong()).asFlow().map { it.executeAsOne() },
+        database.arrowScoreQueries.selectAllBySessionId(sessionId.toLong()).asFlow()
+            .mapToList(Dispatchers.IO),
+    ) { sessions, arrows ->
+        mapToSession(sessions, arrows)
     }
 
     suspend fun createSession(params: NewSessionParams): Int = withContext(Dispatchers.IO) {
@@ -67,6 +77,7 @@ class SessionRepository(private val database: AppDatabase) {
                         isCompetition = params.isCompetition,
                     )
                 }
+
                 is NewSessionParams.FreePractice -> database.sessionQueries.insert(
                     startTime = now,
                     roundId = null,
@@ -85,14 +96,15 @@ class SessionRepository(private val database: AppDatabase) {
         database.sessionQueries.deleteById(id.toLong())
     }
 
-    suspend fun insertScore(sessionId: Int, index: Int, scoreId: Int) = withContext(Dispatchers.IO) {
-        database.arrowScoreQueries.insert(
-            sessionId = sessionId.toLong(),
-            index = index.toLong(),
-            scoreId = scoreId.toLong(),
-            timestamp = System.currentTimeMillis(),
-        )
-    }
+    suspend fun insertScore(sessionId: Int, index: Int, scoreId: Int) =
+        withContext(Dispatchers.IO) {
+            database.arrowScoreQueries.insert(
+                sessionId = sessionId.toLong(),
+                index = index.toLong(),
+                scoreId = scoreId.toLong(),
+                timestamp = System.currentTimeMillis(),
+            )
+        }
 
     suspend fun deleteScore(sessionId: Int, index: Int) = withContext(Dispatchers.IO) {
         database.arrowScoreQueries.deleteByIndex(
@@ -101,12 +113,13 @@ class SessionRepository(private val database: AppDatabase) {
         )
     }
 
-    suspend fun updateStartTime(sessionId: Int, epochMillis: Instant) = withContext(Dispatchers.IO) {
-        database.sessionQueries.updateStartTime(
-            startTime = epochMillis,
-            id = sessionId.toLong(),
-        )
-    }
+    suspend fun updateStartTime(sessionId: Int, epochMillis: Instant) =
+        withContext(Dispatchers.IO) {
+            database.sessionQueries.updateStartTime(
+                startTime = epochMillis,
+                id = sessionId.toLong(),
+            )
+        }
 
     private fun mapToSession(entity: Sessions, arrows: List<Arrow_scores>): Session {
         val arrowsPerEnds = entity.arrowsPerEnd.split(",").map { it.trim().toIntOrNull() }
