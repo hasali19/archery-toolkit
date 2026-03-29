@@ -17,7 +17,11 @@ object NotificationChannels {
 
         manager.createNotificationChannels(
             listOf(
-                NotificationChannel(SESSION, "Active Session", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(
+                    SESSION,
+                    "Active Session",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
             )
         )
     }
