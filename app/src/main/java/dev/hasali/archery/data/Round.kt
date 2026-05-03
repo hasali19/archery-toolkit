@@ -79,6 +79,158 @@ val standardRounds = listOf(
             ),
         ),
     ),
+    StandardRound(
+        id = "windsor_60",
+        displayName = "Windsor",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(60, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(50, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(40, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "windsor_50",
+        displayName = "Windsor 50",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(50, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(40, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(30, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "windsor_40",
+        displayName = "Windsor 40",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(40, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(30, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(20, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "windsor_30",
+        displayName = "Windsor 30",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(30, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(20, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+            StandardRoundDistance(
+                distanceValue = DistanceValue(10, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 6,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "252_60",
+        displayName = "252 - 60 yds",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(60, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 3,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "252_50",
+        displayName = "252 - 50 yds",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(50, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 3,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "252_40",
+        displayName = "252 - 40 yds",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(40, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 3,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
+    StandardRound(
+        id = "252_30",
+        displayName = "252 - 30 yds",
+        scoringSystem = ScoringSystems.imperial,
+        distances = listOf(
+            StandardRoundDistance(
+                distanceValue = DistanceValue(30, DistanceUnit.Yards),
+                arrows = 36,
+                defaultArrowsPerEnd = 3,
+                possibleArrowsPerEnd = listOf(3, 6),
+            ),
+        ),
+    ),
 )
 
 val standardRoundsById = standardRounds.associateBy { it.id }
