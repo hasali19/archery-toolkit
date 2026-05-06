@@ -20,7 +20,7 @@ object NotificationChannels {
                 NotificationChannel(
                     SESSION,
                     "Active Session",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    NotificationManager.IMPORTANCE_LOW
                 )
             )
         )
