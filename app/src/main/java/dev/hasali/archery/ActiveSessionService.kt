@@ -77,6 +77,7 @@ class ActiveSessionService : Service() {
     private fun sessionPendingIntent(sessionId: Int): PendingIntent {
         val deepLinkUri = "archery://session/$sessionId".toUri()
         val intent = Intent(Intent.ACTION_VIEW, deepLinkUri, this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         return PendingIntent.getActivity(
             this,
             sessionId,
