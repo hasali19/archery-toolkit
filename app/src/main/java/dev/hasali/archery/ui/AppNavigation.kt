@@ -11,6 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import dev.hasali.archery.ActiveSessionService
 import dev.hasali.archery.ArcheryApplication
 import dev.hasali.archery.ui.scoring.SessionScoringScreen
@@ -21,6 +22,7 @@ import dev.hasali.archery.ui.sessions.SessionsViewModelFactory
 private const val ROUTE_SESSIONS = "sessions"
 private const val ROUTE_SESSION_SCORING = "session/{sessionId}"
 private const val ARG_SESSION_ID = "sessionId"
+private const val DEEP_LINK_SESSION = "archery://session/{sessionId}"
 
 @Composable
 fun AppNavigation(app: ArcheryApplication) {
@@ -42,6 +44,7 @@ fun AppNavigation(app: ArcheryApplication) {
         composable(
             route = ROUTE_SESSION_SCORING,
             arguments = listOf(navArgument(ARG_SESSION_ID) { type = NavType.IntType }),
+            deepLinks = listOf(navDeepLink { uriPattern = DEEP_LINK_SESSION }),
         ) { backStackEntry ->
             val sessionId = backStackEntry.arguments!!.getInt(ARG_SESSION_ID)
             val vm = viewModel<dev.hasali.archery.ui.scoring.SessionScoringViewModel>(
