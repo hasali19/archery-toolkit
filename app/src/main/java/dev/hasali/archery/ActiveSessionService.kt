@@ -89,7 +89,7 @@ class ActiveSessionService : Service() {
         return NotificationCompat.Builder(this, NotificationChannels.SESSION)
             .setContentTitle("Active Session")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setContentIntent(sessionPendingIntent(sessionId))
             .build()
     }
@@ -102,7 +102,7 @@ class ActiveSessionService : Service() {
             .setContentTitle(session.roundDetails.displayName)
             .setContentText("Total: $total\tAverage: ${"%.2f".format(average)}")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setContentIntent(sessionPendingIntent(sessionId))
             .build()
     }
