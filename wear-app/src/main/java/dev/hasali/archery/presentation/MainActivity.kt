@@ -94,16 +94,16 @@ private data class WearScore(val id: Int, val label: String, val color: Color) {
 private fun parseEndScores(dataItem: DataItem): List<WearScore> {
     val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
     val labels = dataMap.getStringArray("endScoreLabels") ?: return emptyList()
-    val colors = dataMap.getIntArray("endScoreColors") ?: return emptyList()
+    val colors = dataMap.getIntegerArrayList("endScoreColors") ?: return emptyList()
     if (labels.size != colors.size) return emptyList()
-    return labels.zip(colors.toList()).map { (label, color) -> WearScore(0, label, Color(color)) }
+    return labels.zip(colors).map { (label, color) -> WearScore(0, label, Color(color)) }
 }
 
 private fun parseKeyboardScores(dataItem: DataItem): List<WearScore> {
     val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
-    val ids = dataMap.getIntArray("keyboardScoreIds") ?: return emptyList()
+    val ids = dataMap.getIntegerArrayList("keyboardScoreIds") ?: return emptyList()
     val labels = dataMap.getStringArray("keyboardScoreLabels") ?: return emptyList()
-    val colors = dataMap.getIntArray("keyboardScoreColors") ?: return emptyList()
+    val colors = dataMap.getIntegerArrayList("keyboardScoreColors") ?: return emptyList()
     if (ids.size != labels.size || ids.size != colors.size) return emptyList()
     return ids.indices.map { i -> WearScore(ids[i], labels[i], Color(colors[i])) }
 }

@@ -124,10 +124,10 @@ class ActiveSessionService : Service() {
         val request = PutDataMapRequest.create("/active-session").apply {
             dataMap.putInt("sessionId", sessionId)
             dataMap.putStringArray("endScoreLabels", endScores.map { it.label }.toTypedArray())
-            dataMap.putIntArray("endScoreColors", endScores.map { it.color.toArgb() }.toIntArray())
-            dataMap.putIntArray("keyboardScoreIds", keyboard.map { it.id }.toIntArray())
+            dataMap.putIntegerArrayList("endScoreColors", ArrayList(endScores.map { it.color.toArgb() }))
+            dataMap.putIntegerArrayList("keyboardScoreIds", ArrayList(keyboard.map { it.id }))
             dataMap.putStringArray("keyboardScoreLabels", keyboard.map { it.label }.toTypedArray())
-            dataMap.putIntArray("keyboardScoreColors", keyboard.map { it.color.toArgb() }.toIntArray())
+            dataMap.putIntegerArrayList("keyboardScoreColors", ArrayList(keyboard.map { it.color.toArgb() }))
         }.asPutDataRequest().setUrgent()
         Wearable.getDataClient(this).putDataItem(request)
     }
