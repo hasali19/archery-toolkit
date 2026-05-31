@@ -55,16 +55,6 @@ class ActiveSessionService : Service() {
             foregroundServiceType
         )
 
-        val request = PutDataMapRequest.create("/active-session").apply {
-            dataMap.putInt("sessionId", sessionId)
-            dataMap.putStringArray("endScoreLabels", emptyArray())
-            dataMap.putIntArray("endScoreColors", intArrayOf())
-            dataMap.putIntArray("keyboardScoreIds", intArrayOf())
-            dataMap.putStringArray("keyboardScoreLabels", emptyArray())
-            dataMap.putIntArray("keyboardScoreColors", intArrayOf())
-        }.asPutDataRequest().setUrgent()
-        Wearable.getDataClient(this).putDataItem(request)
-
         val notificationManager = NotificationManagerCompat.from(this)
 
         serviceScope.launch {
