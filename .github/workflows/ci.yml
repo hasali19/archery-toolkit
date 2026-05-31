@@ -34,7 +34,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: apk-release
-          path: app/build/outputs/apk/release/app-release.apk
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            wear-app/build/outputs/apk/release/app-release.apk
 
   release:
     runs-on: ubuntu-latest
@@ -58,7 +60,8 @@ jobs:
           mkdir release_artifacts
 
           echo "Preparing android apks"
-          cp artifacts/apk-release/app-release.apk release_artifacts/archery-release-${{ github.run_number }}.apk
+          cp artifacts/apk-release/app/build/outputs/apk/release/app-release.apk release_artifacts/archery-${{ github.run_number }}.apk
+          cp artifacts/apk-release/wear-app/build/outputs/apk/release/app-release.apk release_artifacts/archery-wear-${{ github.run_number }}.apk
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
