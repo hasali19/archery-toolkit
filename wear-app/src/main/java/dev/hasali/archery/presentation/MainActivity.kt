@@ -5,6 +5,7 @@
 
 package dev.hasali.archery.presentation
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,8 +29,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +45,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -53,6 +59,9 @@ import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.LocalContentColor
 import androidx.wear.compose.material3.touchTargetAwareSize
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.Wearable
 import dev.hasali.archery.presentation.theme.AndroidTheme
 import kotlin.math.PI
 import kotlin.math.abs
@@ -74,8 +83,40 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun WearApp() {
+    val context = LocalContext.current
+    var isSessionActive by remember { mutableStateOf<Boolean?>(null) }
+
+    DisposableEffect(Unit) {
+        val dataClient = Wearable.getDataClient(context)
+        val listener = DataClient.OnDataChangedListener { events ->
+            for (event in events) {
+                if (event.dataItem.uri.path == "/active-session") {
+                    isSessionActive = event.type != DataEvent.TYPE_DELETED
+                }
+            }
+        }
+        dataClient.addListener(listener)
+        dataClient.getDataItems(Uri.parse("wear://*/active-session"))
+            .addOnSuccessListener { items ->
+                isSessionActive = items.count > 0
+                items.release()
+            }
+        onDispose {
+            dataClient.removeListener(listener)
+        }
+    }
+
     AndroidTheme {
         AppScaffold {
+            when (isSessionActive) {
+                null -> {}
+                false -> Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    BasicText("No session active")
+                }
+                true -> {
 
             data class Score(
                 val label: String,
@@ -222,6 +263,9 @@ fun WearApp() {
                     }
                 }
             }
+
+                } // true ->
+            } // when
         }
     }
 }

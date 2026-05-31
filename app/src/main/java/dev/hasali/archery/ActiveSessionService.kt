@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ActivityCompat
@@ -14,11 +15,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.net.toUri
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 import dev.hasali.archery.data.Session
 import dev.hasali.archery.repository.SessionRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class ActiveSessionService : Service() {
@@ -50,6 +54,11 @@ class ActiveSessionService : Service() {
             foregroundServiceType
         )
 
+        val request = PutDataMapRequest.create("/active-session").apply {
+            dataMap.putInt("sessionId", sessionId)
+        }.asPutDataRequest().setUrgent()
+        Wearable.getDataClient(this).putDataItem(request)
+
         val notificationManager = NotificationManagerCompat.from(this)
 
         serviceScope.launch {
@@ -67,7 +76,14 @@ class ActiveSessionService : Service() {
                 }
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        Wearable.getDataClient(this)
+            .deleteDataItems(Uri.parse("wear://*/active-session"))
+        serviceScope.cancel()
+        super.onDestroy()
     }
 
     override fun onBind(p0: Intent?): IBinder? {
