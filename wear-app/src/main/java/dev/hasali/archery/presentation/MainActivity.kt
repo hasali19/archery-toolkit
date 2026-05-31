@@ -5,11 +5,13 @@
 
 package dev.hasali.archery.presentation
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -64,6 +66,7 @@ import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
 import dev.hasali.archery.presentation.theme.AndroidTheme
+import java.nio.ByteBuffer
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -83,7 +86,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class WearScore(val label: String, val color: Color) {
+private data class WearScore(val id: Int, val label: String, val color: Color) {
     val foregroundColor: Color
         get() = if (color.luminance() > 0.5) Color.Black else Color.White
 }
@@ -93,14 +96,32 @@ private fun parseEndScores(dataItem: DataItem): List<WearScore> {
     val labels = dataMap.getStringArray("endScoreLabels") ?: return emptyList()
     val colors = dataMap.getIntArray("endScoreColors") ?: return emptyList()
     if (labels.size != colors.size) return emptyList()
-    return labels.zip(colors.toList()).map { (label, color) -> WearScore(label, Color(color)) }
+    return labels.zip(colors.toList()).map { (label, color) -> WearScore(0, label, Color(color)) }
+}
+
+private fun parseKeyboardScores(dataItem: DataItem): List<WearScore> {
+    val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
+    val ids = dataMap.getIntArray("keyboardScoreIds") ?: return emptyList()
+    val labels = dataMap.getStringArray("keyboardScoreLabels") ?: return emptyList()
+    val colors = dataMap.getIntArray("keyboardScoreColors") ?: return emptyList()
+    if (ids.size != labels.size || ids.size != colors.size) return emptyList()
+    return ids.indices.map { i -> WearScore(ids[i], labels[i], Color(colors[i])) }
+}
+
+private fun sendScoreMessage(context: Context, path: String, payload: ByteArray) {
+    Wearable.getNodeClient(context).connectedNodes.addOnSuccessListener { nodes ->
+        val node = nodes.firstOrNull() ?: return@addOnSuccessListener
+        Wearable.getMessageClient(context).sendMessage(node.id, path, payload)
+    }
 }
 
 @Composable
 fun WearApp() {
     val context = LocalContext.current
     var isSessionActive by remember { mutableStateOf<Boolean?>(null) }
+    var sessionId by remember { mutableStateOf(0) }
     var currentEndScores by remember { mutableStateOf(emptyList<WearScore>()) }
+    var keyboardScores by remember { mutableStateOf(emptyList<WearScore>()) }
 
     DisposableEffect(Unit) {
         val dataClient = Wearable.getDataClient(context)
@@ -109,10 +130,14 @@ fun WearApp() {
                 if (event.dataItem.uri.path == "/active-session") {
                     if (event.type == DataEvent.TYPE_DELETED) {
                         isSessionActive = false
+                        sessionId = 0
                         currentEndScores = emptyList()
+                        keyboardScores = emptyList()
                     } else {
                         isSessionActive = true
+                        sessionId = DataMapItem.fromDataItem(event.dataItem).dataMap.getInt("sessionId")
                         currentEndScores = parseEndScores(event.dataItem)
+                        keyboardScores = parseKeyboardScores(event.dataItem)
                     }
                 }
             }
@@ -122,7 +147,10 @@ fun WearApp() {
             .addOnSuccessListener { items ->
                 isSessionActive = items.count > 0
                 if (items.count > 0) {
-                    currentEndScores = parseEndScores(items[0])
+                    val item = items[0]
+                    sessionId = DataMapItem.fromDataItem(item).dataMap.getInt("sessionId")
+                    currentEndScores = parseEndScores(item)
+                    keyboardScores = parseKeyboardScores(item)
                 }
                 items.release()
             }
@@ -144,21 +172,7 @@ fun WearApp() {
 
                 true -> {
                     val scores = currentEndScores
-
-                    val possibleScores = listOf(
-                        WearScore("X", Color(0xFFFFEB3B)),
-                        WearScore("10", Color(0xFFFFEB3B)),
-                        WearScore("9", Color(0xFFFFEB3B)),
-                        WearScore("8", Color(0xFFF44336)),
-                        WearScore("7", Color(0xFFF44336)),
-                        WearScore("6", Color(0xFF2196F3)),
-                        WearScore("5", Color(0xFF2196F3)),
-                        WearScore("4", Color(0xFF202020)),
-                        WearScore("3", Color(0xFF202020)),
-                        WearScore("2", Color.White),
-                        WearScore("1", Color.White),
-                        WearScore("M", Color(0xFF4CAF50)),
-                    )
+                    val possibleScores = keyboardScores
 
                     val screenWidthAtOffset = @Composable { offset: Dp ->
                         val screenHeight = LocalConfiguration.current.screenHeightDp / 2
@@ -236,10 +250,15 @@ fun WearApp() {
                                                         modifier = Modifier
                                                             .size(buttonWidth, buttonHeight)
                                                             .padding(2.dp)
-                                                            .clip(
-                                                                SquircleShape()
-                                                            )
+                                                            .clip(SquircleShape())
                                                             .background(score.color)
+                                                            .clickable {
+                                                                val payload = ByteBuffer.allocate(8)
+                                                                    .putInt(sessionId)
+                                                                    .putInt(score.id)
+                                                                    .array()
+                                                                sendScoreMessage(context, "/score/add", payload)
+                                                            }
                                                     ) {
                                                         val contentColor = LocalContentColor.current
                                                         BasicText(
@@ -263,7 +282,10 @@ fun WearApp() {
                             ) {
                                 IconButton(
                                     modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.SmallButtonSize),
-                                    onClick = {},
+                                    onClick = {
+                                        val payload = ByteBuffer.allocate(4).putInt(sessionId).array()
+                                        sendScoreMessage(context, "/score/delete-last", payload)
+                                    },
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Default.Backspace,

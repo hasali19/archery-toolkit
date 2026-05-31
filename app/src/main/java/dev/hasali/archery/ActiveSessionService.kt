@@ -59,6 +59,9 @@ class ActiveSessionService : Service() {
             dataMap.putInt("sessionId", sessionId)
             dataMap.putStringArray("endScoreLabels", emptyArray())
             dataMap.putIntArray("endScoreColors", intArrayOf())
+            dataMap.putIntArray("keyboardScoreIds", intArrayOf())
+            dataMap.putStringArray("keyboardScoreLabels", emptyArray())
+            dataMap.putIntArray("keyboardScoreColors", intArrayOf())
         }.asPutDataRequest().setUrgent()
         Wearable.getDataClient(this).putDataItem(request)
 
@@ -127,10 +130,14 @@ class ActiveSessionService : Service() {
 
     private fun publishSessionScores(sessionId: Int, session: Session) {
         val endScores = getCurrentEndScores(session)
+        val keyboard = session.roundDetails.scoringSystem.scores
         val request = PutDataMapRequest.create("/active-session").apply {
             dataMap.putInt("sessionId", sessionId)
             dataMap.putStringArray("endScoreLabels", endScores.map { it.label }.toTypedArray())
             dataMap.putIntArray("endScoreColors", endScores.map { it.color.toArgb() }.toIntArray())
+            dataMap.putIntArray("keyboardScoreIds", keyboard.map { it.id }.toIntArray())
+            dataMap.putStringArray("keyboardScoreLabels", keyboard.map { it.label }.toTypedArray())
+            dataMap.putIntArray("keyboardScoreColors", keyboard.map { it.color.toArgb() }.toIntArray())
         }.asPutDataRequest().setUrgent()
         Wearable.getDataClient(this).putDataItem(request)
     }
