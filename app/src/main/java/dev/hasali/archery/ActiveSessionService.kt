@@ -10,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -56,23 +57,24 @@ class ActiveSessionService : Service() {
 
         val request = PutDataMapRequest.create("/active-session").apply {
             dataMap.putInt("sessionId", sessionId)
+            dataMap.putStringArray("endScoreLabels", emptyArray())
+            dataMap.putIntArray("endScoreColors", intArrayOf())
         }.asPutDataRequest().setUrgent()
         Wearable.getDataClient(this).putDataItem(request)
 
         val notificationManager = NotificationManagerCompat.from(this)
 
         serviceScope.launch {
-            if (ActivityCompat.checkSelfPermission(
-                    this@ActiveSessionService,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return@launch
-            }
-
             sessionRepository.watchSession(sessionId)
-                .collect {
-                    notificationManager.notify(NOTIFICATION_ID, buildNotification(sessionId, it))
+                .collect { session ->
+                    if (ActivityCompat.checkSelfPermission(
+                            this@ActiveSessionService,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notificationManager.notify(NOTIFICATION_ID, buildNotification(sessionId, session))
+                    }
+                    publishSessionScores(sessionId, session)
                 }
         }
 
@@ -121,6 +123,32 @@ class ActiveSessionService : Service() {
             .setSilent(true)
             .setContentIntent(sessionPendingIntent(sessionId))
             .build()
+    }
+
+    private fun publishSessionScores(sessionId: Int, session: Session) {
+        val endScores = getCurrentEndScores(session)
+        val request = PutDataMapRequest.create("/active-session").apply {
+            dataMap.putInt("sessionId", sessionId)
+            dataMap.putStringArray("endScoreLabels", endScores.map { it.label }.toTypedArray())
+            dataMap.putIntArray("endScoreColors", endScores.map { it.color.toArgb() }.toIntArray())
+        }.asPutDataRequest().setUrgent()
+        Wearable.getDataClient(this).putDataItem(request)
+    }
+
+    private fun getCurrentEndScores(session: Session): List<dev.hasali.archery.data.Score> {
+        val totalScores = session.scores.size
+        if (totalScores == 0) return emptyList()
+
+        val distances = session.roundDetails.distances
+        val currentDistance = distances.lastOrNull { it.firstArrowIndex < totalScores }
+            ?: return emptyList()
+
+        val arrowsPerEnd = currentDistance.arrowsPerEnd
+        val scoresInDistance = totalScores - currentDistance.firstArrowIndex
+        val endIndexInDistance = (scoresInDistance - 1) / arrowsPerEnd
+        val currentEndStart = currentDistance.firstArrowIndex + endIndexInDistance * arrowsPerEnd
+
+        return session.scores.drop(currentEndStart).take(arrowsPerEnd)
     }
 
     companion object {
