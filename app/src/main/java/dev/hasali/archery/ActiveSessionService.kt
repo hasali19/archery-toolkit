@@ -81,7 +81,7 @@ class ActiveSessionService : Service() {
 
     override fun onDestroy() {
         Wearable.getDataClient(this)
-            .deleteDataItems(Uri.parse("wear://*/active-session"))
+            .deleteDataItems("wear://*/active-session".toUri())
         serviceScope.cancel()
         super.onDestroy()
     }
